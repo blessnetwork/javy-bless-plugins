@@ -16,8 +16,7 @@ crate-type = ["cdylib"]
 [dependencies]
 anyhow = "1.0.95"
 blockless-sdk = { version = "0.1.6" }
-javy-plugin-api = { path = "../bls-javy/crates/plugin-api", features = ["json"] }
-# javy-plugin-api = { version = "3.0.0", features = ["json"] }
+javy-plugin-api = { version = "3.0.0", features = ["json"] }
 
 [profile.release]
 lto = true
