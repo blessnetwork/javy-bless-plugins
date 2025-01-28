@@ -1,0 +1,46 @@
+name: Release Assets
+
+on: push
+# on:
+#   release:
+#     types: [created]
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@1.84.0
+        with:
+          toolchain: stable
+          targets: wasm32-wasip1
+
+      - name: Install javy-cli
+        run: |
+          JAVY_VERSION=$(curl -s https://api.github.com/repos/bytecodealliance/javy/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+          curl -L "https://github.com/bytecodealliance/javy/releases/download/${JAVY_VERSION}/javy-x86_64-linux-v${JAVY_VERSION#v}.gz" -o javy.gz
+          gunzip javy.gz
+          chmod +x javy
+          sudo mv javy /usr/local/bin/
+
+      - name: Build
+        run: |
+          cargo build --target=wasm32-wasip1 --release
+          javy init-plugin ./target/wasm32-wasip1/release/bless_plugins.wasm -o bless_plugins.wasm
+          ls -la ./
+
+      # - name: Upload artifact
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: bless-plugins-wasm
+      #     path: bless_plugins.wasm
+      #     retention-days: 1  # Since we're attaching to release, we only need this temporarily
+
+      # - name: Upload Release Asset
+      #   run: |
+      #     gh release upload ${{ github.event.release.tag_name }} bless_plugins.wasm
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
