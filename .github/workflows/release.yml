@@ -32,15 +32,23 @@ jobs:
           cargo build --target=wasm32-wasip1 --release
           javy init-plugin ./target/wasm32-wasip1/release/bless_plugins.wasm -o bless_plugins.wasm
 
+      - name: Prepare versioned artifact
+        id: prepare
+        run: |
+          VERSION=${{ github.event.release.tag_name }}
+          ARTIFACT_NAME="bless-plugins-${VERSION}.wasm"
+          mv bless_plugins.wasm "$ARTIFACT_NAME"
+          echo "artifact_name=$ARTIFACT_NAME" >> "$GITHUB_OUTPUT"
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: bless-plugins-wasm
-          path: bless_plugins.wasm
+          path: ${{ steps.prepare.outputs.artifact_name }}
           retention-days: 1  # Since we're attaching to release, we only need this temporarily
 
       - name: Upload Release Asset
         run: |
-          gh release upload ${{ github.event.release.tag_name }} bless_plugins.wasm --clobber
+          gh release upload ${{ github.event.release.tag_name }} ${{ steps.prepare.outputs.artifact_name }} --clobber
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
