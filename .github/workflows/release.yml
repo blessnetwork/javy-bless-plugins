@@ -28,7 +28,6 @@ jobs:
         run: |
           cargo build --target=wasm32-wasip1 --release
           javy init-plugin ./target/wasm32-wasip1/release/bless_plugins.wasm -o bless_plugins.wasm
-          ls -la ./
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
