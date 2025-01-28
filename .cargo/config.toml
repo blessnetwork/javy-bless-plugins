@@ -1,0 +1,19 @@
+# Explicit directive for simd-json
+# Cargo doesn't read directives in individual crates when invoking build
+# commands from the workspace root, hence adding it at the workspace root.
+# https://doc.rust-lang.org/cargo/reference/config.html
+# Disable reference-types since Wizer (as of version 7.0.0) does not support
+# reference-types.
+[target.wasm32-wasip1]
+rustflags = [
+  "-C",
+  "target-feature=+simd128",
+  "-C",
+  "target-feature=-reference-types",
+]
+
+# We want to ensure that all the MSVC dependencies are statically resolved and
+# included in the final CLI binary.
+# Ref: https://github.com/rust-lang/rust/pull/122268
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]

@@ -1,0 +1,24 @@
+[package]
+name = "javy-bless-plugins"
+version = "0.1.0"
+authors = ["zees-dev"]
+description = "javy bless plugins"
+keywords = ["javy", "bless", "plugins"]
+readme = "README.md"
+edition = "2021"
+license = "MIT/Apache-2.0"
+repository = "https://github.com/blessnetwork/javy-bless-plugins"
+
+[lib]
+name = "bless_plugins"
+crate-type = ["cdylib"]
+
+[dependencies]
+anyhow = "1.0.95"
+blockless-sdk = { version = "0.1.6" }
+javy-plugin-api = { path = "../bls-javy/crates/plugin-api", features = ["json"] }
+# javy-plugin-api = { version = "3.0.0", features = ["json"] }
+
+[profile.release]
+lto = true
+opt-level = 3
