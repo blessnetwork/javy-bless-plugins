@@ -1,9 +1,8 @@
 name: Release Assets
 
-on: push
-# on:
-#   release:
-#     types: [created]
+on:
+  release:
+    types: [created]
 
 jobs:
   build-and-release:
@@ -15,7 +14,6 @@ jobs:
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@1.84.0
         with:
-          toolchain: stable
           targets: wasm32-wasip1
 
       - name: Install javy-cli
@@ -32,15 +30,15 @@ jobs:
           javy init-plugin ./target/wasm32-wasip1/release/bless_plugins.wasm -o bless_plugins.wasm
           ls -la ./
 
-      # - name: Upload artifact
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: bless-plugins-wasm
-      #     path: bless_plugins.wasm
-      #     retention-days: 1  # Since we're attaching to release, we only need this temporarily
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bless-plugins-wasm
+          path: bless_plugins.wasm
+          retention-days: 1  # Since we're attaching to release, we only need this temporarily
 
-      # - name: Upload Release Asset
-      #   run: |
-      #     gh release upload ${{ github.event.release.tag_name }} bless_plugins.wasm
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload Release Asset
+        run: |
+          gh release upload ${{ github.event.release.tag_name }} bless_plugins.wasm
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
