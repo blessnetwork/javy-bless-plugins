@@ -7,6 +7,8 @@ These are the plugins for the [Javy](https://github.com/blessnetwork/bls-javy) r
 | Plugin | Description | [Browser Runtime](https://github.com/blocklessnetwork/b7s-browser) supported | [Native Runtime]([https://github.com/blessnetwork/bls-runtime) supported |
 |--------|-------------|--------------------------|--------------------------|
 | `BlessLLM` | A plugin for interacting with LLMs | ✅ | ❌ |
+| `BlessFetch` | A plugin for interacting with HTTP / fetch | ✅ | ✅ |
+| `BlessCrypto` | A plugin for interacting with the crypto library | ✅ | ✅ |
 
 ## Pre-Requisites
 

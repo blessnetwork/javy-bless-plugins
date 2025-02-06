@@ -24,3 +24,9 @@ serde = { version = "1.0.215", features = ["derive"] }
 [profile.release]
 lto = true
 opt-level = 3
+
+[features]
+crypto = []
+fetch = []
+llm = []
+default = ["crypto", "fetch"]
