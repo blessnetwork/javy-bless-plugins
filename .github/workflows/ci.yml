@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@1.84.0
+        with:
+          targets: wasm32-wasip1
+          components: rustfmt
+      
+      - name: Format
+        run: cargo fmt --all -- --check
+
+      - name: Check
+        run: cargo check --release --all --all-features
+
+      - name: Install javy-cli
+        run: |
+          JAVY_VERSION=$(curl -s https://api.github.com/repos/bytecodealliance/javy/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+          curl -L "https://github.com/bytecodealliance/javy/releases/download/${JAVY_VERSION}/javy-x86_64-linux-v${JAVY_VERSION#v}.gz" -o javy.gz
+          gunzip javy.gz
+          chmod +x javy
+          sudo mv javy /usr/local/bin/
+
+      - name: Build
+        run: |
+          cargo build --target=wasm32-wasip1 --release
+          javy init-plugin ./target/wasm32-wasip1/release/bless_plugins.wasm -o bless_plugins.wasm
