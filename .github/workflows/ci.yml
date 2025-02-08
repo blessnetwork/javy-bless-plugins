@@ -36,3 +36,9 @@ jobs:
         run: |
           cargo build --target=wasm32-wasip1 --release
           javy init-plugin ./target/wasm32-wasip1/release/bless_plugins.wasm -o bless_plugins.wasm
+      
+      - name: Build examples
+        run: |
+          for file in ./examples/*.js; do
+            javy build -C plugin=bless_plugins.wasm "$file" -o "${file%.js}.wasm"
+          done
