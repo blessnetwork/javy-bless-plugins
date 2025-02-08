@@ -72,11 +72,12 @@ checksum = "8f68f53c83ab957f72c32642f3868eec03eb974d1fb82e453128456482613d36"
 
 [[package]]
 name = "blockless-sdk"
-version = "0.1.6"
+version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4567ec9632cf48e7a5225b5a075f334f1c8a364d4ff9692925d58de1b17dcb0c"
+checksum = "82dbcfbca020aff69a130a970105d958d2c5de453a963ac90af1914b78d1af6a"
 dependencies = [
  "json",
+ "serde",
 ]
 
 [[package]]
