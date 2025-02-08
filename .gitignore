@@ -6,4 +6,4 @@
 /target
 
 # Output WASM files from README.md
-bless*.wasm
+*.wasm
