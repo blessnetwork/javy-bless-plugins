@@ -65,6 +65,44 @@ pub fn bless_llm_plugin(args: Args<'_>) -> Result<Value<'_>> {
 
     let llm_ref = Arc::clone(&llm);
     instance.set(
+        "getOptions",
+        Function::new(
+            cx.clone(),
+            MutFn::new(move |cx, args| {
+                let (cx, args) = hold_and_release!(cx, args);
+
+                let get_options = |args: Args<'_>| {
+                    let (_cx, _args) = args.release();
+
+                    let options = llm_ref.lock().unwrap().get_options().unwrap();
+
+                    let opts_obj = Object::new(cx.clone())?;
+                    opts_obj.set(
+                        "system_message",
+                        Value::from_string(JSString::from_str(
+                            cx.clone(),
+                            &options.system_message,
+                        )?),
+                    )?;
+                    opts_obj.set(
+                        "temperature",
+                        Value::new_number(cx.clone(), options.temperature.unwrap_or(0.0) as f64),
+                    )?;
+                    opts_obj.set(
+                        "top_p",
+                        Value::new_number(cx.clone(), options.top_p.unwrap_or(0.0) as f64),
+                    )?;
+
+                    Ok(Value::from_object(opts_obj))
+                };
+
+                get_options(hold!(cx.clone(), args)).map_err(|e| to_js_error(cx, e))
+            }),
+        ),
+    )?;
+
+    let llm_ref = Arc::clone(&llm);
+    instance.set(
         "chat",
         Function::new(
             cx.clone(),
