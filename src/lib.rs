@@ -74,6 +74,15 @@ pub extern "C" fn initialize_runtime() {
                     )?,
                 )?;
 
+                // Expose the suppported models object globally for JS
+                #[cfg(feature = "llm")]
+                ctx.globals().set(
+                    "MODELS",
+                    javy_plugin_api::javy::quickjs::Value::from_object(
+                        llm::supported_models_object(&ctx)?,
+                    ),
+                )?;
+
                 #[cfg(feature = "crypto")]
                 ctx.eval::<(), _>(include_str!("crypto/crypto.js"))?;
                 #[cfg(feature = "fetch")]

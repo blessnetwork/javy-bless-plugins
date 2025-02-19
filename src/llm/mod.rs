@@ -1,11 +1,64 @@
 use anyhow::{anyhow, Result};
-use blockless_sdk::{BlocklessLlm, LlmOptions};
+use blockless_sdk::{BlocklessLlm, LlmOptions, SupportedModels};
 use javy_plugin_api::javy::{
     hold, hold_and_release,
     quickjs::{prelude::MutFn, Function, Object, String as JSString, Value},
     to_js_error, Args,
 };
-use std::sync::{Arc, Mutex};
+use std::{
+    str::FromStr,
+    sync::{Arc, Mutex},
+};
+
+pub fn supported_models_object<'js>(
+    cx: &javy_plugin_api::javy::quickjs::Ctx<'js>,
+) -> Result<Object<'js>> {
+    let models = Object::new(cx.clone())?;
+
+    // Llama 3.2 1B
+    let llama_3_2_1b = Object::new(cx.clone())?;
+    llama_3_2_1b.set("DEFAULT", "Llama-3.2-1B-Instruct")?;
+    llama_3_2_1b.set("Q6_K", "Llama-3.2-1B-Instruct-Q6_K")?;
+    llama_3_2_1b.set("Q4F16_1", "Llama-3.2-1B-Instruct-q4f16_1")?;
+    models.set("LLAMA_3_2_1B", Value::from_object(llama_3_2_1b))?;
+
+    // Llama 3.2 3B
+    let llama_3_2_3b = Object::new(cx.clone())?;
+    llama_3_2_3b.set("DEFAULT", "Llama-3.2-3B-Instruct")?;
+    llama_3_2_3b.set("Q6_K", "Llama-3.2-3B-Instruct-Q6_K")?;
+    llama_3_2_3b.set("Q4F16_1", "Llama-3.2-3B-Instruct-q4f16_1")?;
+    models.set("LLAMA_3_2_3B", Value::from_object(llama_3_2_3b))?;
+
+    // Mistral 7B
+    let mistral_7b = Object::new(cx.clone())?;
+    mistral_7b.set("DEFAULT", "Mistral-7B-Instruct-v0.3")?;
+    mistral_7b.set("Q4F16_1", "Mistral-7B-Instruct-v0.3-q4f16_1")?;
+    models.set("MISTRAL_7B", Value::from_object(mistral_7b))?;
+
+    // Mixtral 8x7B
+    let mixtral_8x7b = Object::new(cx.clone())?;
+    mixtral_8x7b.set("DEFAULT", "Mixtral-8x7B-Instruct-v0.1")?;
+    mixtral_8x7b.set("Q4F16_1", "Mixtral-8x7B-Instruct-v0.1-q4f16_1")?;
+    models.set("MIXTRAL_8X7B", Value::from_object(mixtral_8x7b))?;
+
+    // Gemma models
+    let gemma_2_2b = Object::new(cx.clone())?;
+    gemma_2_2b.set("DEFAULT", "gemma-2-2b-it")?;
+    gemma_2_2b.set("Q4F16_1", "gemma-2-2b-it-q4f16_1")?;
+    models.set("GEMMA_2_2B", Value::from_object(gemma_2_2b))?;
+
+    let gemma_2_7b = Object::new(cx.clone())?;
+    gemma_2_7b.set("DEFAULT", "gemma-2-27b-it")?;
+    gemma_2_7b.set("Q4F16_1", "gemma-2-27b-it-q4f16_1")?;
+    models.set("GEMMA_2_7B", Value::from_object(gemma_2_7b))?;
+
+    let gemma_2_9b = Object::new(cx.clone())?;
+    gemma_2_9b.set("DEFAULT", "gemma-2-9b-it")?;
+    gemma_2_9b.set("Q4F16_1", "gemma-2-9b-it-q4f16_1")?;
+    models.set("GEMMA_2_9B", Value::from_object(gemma_2_9b))?;
+
+    Ok(models)
+}
 
 pub fn bless_llm_plugin(args: Args<'_>) -> Result<Value<'_>> {
     let (cx, args) = args.release();
@@ -19,11 +72,16 @@ pub fn bless_llm_plugin(args: Args<'_>) -> Result<Value<'_>> {
         .to_string()
         .map_err(|_| anyhow!("invalid UTF-8 in model name"))?;
 
+    let model = SupportedModels::from_str(&model_name).unwrap();
+
     // Create BlocklessLlm instance using SDK
-    let llm = Arc::new(Mutex::new(BlocklessLlm::new(&model_name).unwrap()));
+    let llm = Arc::new(Mutex::new(BlocklessLlm::new(model).unwrap()));
 
     // Convert to QuickJS object and expose SDK methods
     let instance = Object::new(cx.clone())?;
+
+    // Expose the models object on the instance
+    instance.set("MODELS", Value::from_object(supported_models_object(&cx)?))?;
 
     let llm_ref = Arc::clone(&llm);
     instance.set(
@@ -59,6 +117,44 @@ pub fn bless_llm_plugin(args: Args<'_>) -> Result<Value<'_>> {
                 };
 
                 set_options(hold!(cx.clone(), args)).map_err(|e| to_js_error(cx, e))
+            }),
+        ),
+    )?;
+
+    let llm_ref = Arc::clone(&llm);
+    instance.set(
+        "getOptions",
+        Function::new(
+            cx.clone(),
+            MutFn::new(move |cx, args| {
+                let (cx, args) = hold_and_release!(cx, args);
+
+                let get_options = |args: Args<'_>| {
+                    let (_cx, _args) = args.release();
+
+                    let options = llm_ref.lock().unwrap().get_options().unwrap();
+
+                    let opts_obj = Object::new(cx.clone())?;
+                    opts_obj.set(
+                        "system_message",
+                        Value::from_string(JSString::from_str(
+                            cx.clone(),
+                            &options.system_message,
+                        )?),
+                    )?;
+                    opts_obj.set(
+                        "temperature",
+                        Value::new_number(cx.clone(), options.temperature.unwrap_or(0.0) as f64),
+                    )?;
+                    opts_obj.set(
+                        "top_p",
+                        Value::new_number(cx.clone(), options.top_p.unwrap_or(0.0) as f64),
+                    )?;
+
+                    Ok(Value::from_object(opts_obj))
+                };
+
+                get_options(hold!(cx.clone(), args)).map_err(|e| to_js_error(cx, e))
             }),
         ),
     )?;

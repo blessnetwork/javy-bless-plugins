@@ -1,11 +1,12 @@
-use std::cmp::Ordering;
-use serde_json::{json, Value};
 use crate::fetch::FetchOptions;
+use serde_json::{json, Value};
+use std::cmp::Ordering;
 
 pub type Handle = u32;
 
 pub type CodeStatus = u32;
 
+#[allow(dead_code)]
 pub struct BlocklessHttp {
     inner: Handle,
     code: CodeStatus,
@@ -39,6 +40,7 @@ impl HttpOptions {
     }
 }
 
+#[allow(dead_code)]
 impl BlocklessHttp {
     pub fn open(url: &str, opts: &FetchOptions) -> Result<Self, HttpErrorKind> {
         let http_opts = HttpOptions::new(&opts.method, 30, 10);
@@ -65,6 +67,7 @@ impl BlocklessHttp {
         })
     }
 
+    #[allow(dead_code)]
     pub fn get_code(&self) -> CodeStatus {
         self.code
     }
@@ -137,6 +140,7 @@ impl BlocklessHttp {
     }
 }
 
+#[allow(dead_code)]
 #[derive(Debug)]
 pub enum HttpErrorKind {
     InvalidDriver,
@@ -211,6 +215,7 @@ extern "C" {
         status: *mut u32,
     ) -> u32;
 
+    #[allow(dead_code)]
     #[link_name = "http_read_header"]
     pub(crate) fn http_read_header(
         handle: u32,
