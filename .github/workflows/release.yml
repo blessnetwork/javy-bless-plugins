@@ -10,6 +10,12 @@ permissions:
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        build: [
+          { name: 'standard', features: '' },
+          { name: 'llm', features: '--features default,llm' }
+        ]
 
     steps:
       - uses: actions/checkout@v4
@@ -27,25 +33,26 @@ jobs:
           chmod +x javy
           sudo mv javy /usr/local/bin/
 
-      - name: Build
+      - name: Build ${{ matrix.build.name }}
         run: |
-          cargo build --target=wasm32-wasip1 --release
+          cargo build --target=wasm32-wasip1 --release ${{ matrix.build.features }}
           javy init-plugin ./target/wasm32-wasip1/release/bless_plugins.wasm -o bless_plugins.wasm
 
       - name: Prepare versioned artifact
         id: prepare
         run: |
           VERSION=${{ github.event.release.tag_name }}
-          ARTIFACT_NAME="bless-plugins-${VERSION}.wasm"
+          SUFFIX="${{ matrix.build.name != 'standard' && format('-{0}', matrix.build.name) || '' }}"
+          ARTIFACT_NAME="bless-plugins${SUFFIX}-${VERSION}.wasm"
           mv bless_plugins.wasm "$ARTIFACT_NAME"
           echo "artifact_name=$ARTIFACT_NAME" >> "$GITHUB_OUTPUT"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: bless-plugins-wasm
+          name: bless-plugins-wasm-${{ matrix.build.name }}
           path: ${{ steps.prepare.outputs.artifact_name }}
-          retention-days: 1  # Since we're attaching to release, we only need this temporarily
+          retention-days: 1
 
       - name: Upload Release Asset
         run: |
