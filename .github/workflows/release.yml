@@ -14,7 +14,10 @@ jobs:
       matrix:
         build: [
           { name: 'standard', features: '' },
-          { name: 'llm', features: '--features default,llm' }
+          { name: 'llm', features: '--no-default-features --features llm' },
+          { name: 'fetch', features: '--no-default-features --features fetch' },
+          { name: 'crypto', features: '--no-default-features --features crypto' },
+          { name: 'full', features: '--no-default-features --features llm,fetch,crypto' }
         ]
 
     steps:
