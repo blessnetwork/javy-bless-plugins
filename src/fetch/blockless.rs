@@ -159,8 +159,6 @@ pub enum HttpErrorKind {
     PermissionDeny,
 }
 
-
-
 impl std::error::Error for HttpErrorKind {}
 
 impl std::fmt::Display for HttpErrorKind {
