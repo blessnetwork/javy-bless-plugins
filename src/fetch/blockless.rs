@@ -159,6 +159,8 @@ pub enum HttpErrorKind {
     PermissionDeny,
 }
 
+
+
 impl std::error::Error for HttpErrorKind {}
 
 impl std::fmt::Display for HttpErrorKind {
@@ -185,19 +187,20 @@ impl std::fmt::Display for HttpErrorKind {
 impl From<u32> for HttpErrorKind {
     fn from(i: u32) -> HttpErrorKind {
         match i {
-            1 => HttpErrorKind::InvalidHandle,
-            2 => HttpErrorKind::MemoryAccessError,
-            3 => HttpErrorKind::BufferTooSmall,
-            4 => HttpErrorKind::HeaderNotFound,
-            5 => HttpErrorKind::Utf8Error,
-            6 => HttpErrorKind::DestinationNotAllowed,
-            7 => HttpErrorKind::InvalidMethod,
-            8 => HttpErrorKind::InvalidEncoding,
-            9 => HttpErrorKind::InvalidUrl,
-            10 => HttpErrorKind::RequestError,
-            11 => HttpErrorKind::RuntimeError,
-            12 => HttpErrorKind::TooManySessions,
-            13 => HttpErrorKind::PermissionDeny,
+            1 => HttpErrorKind::InvalidDriver,
+            2 => HttpErrorKind::InvalidHandle,
+            3 => HttpErrorKind::MemoryAccessError,
+            4 => HttpErrorKind::BufferTooSmall,
+            5 => HttpErrorKind::HeaderNotFound,
+            6 => HttpErrorKind::Utf8Error,
+            7 => HttpErrorKind::DestinationNotAllowed,
+            8 => HttpErrorKind::InvalidMethod,
+            9 => HttpErrorKind::InvalidEncoding,
+            10 => HttpErrorKind::InvalidUrl,
+            11 => HttpErrorKind::RequestError,
+            12 => HttpErrorKind::RuntimeError,
+            13 => HttpErrorKind::TooManySessions,
+            14 => HttpErrorKind::PermissionDeny,
             _ => HttpErrorKind::RuntimeError,
         }
     }
