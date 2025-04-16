@@ -29,4 +29,5 @@ opt-level = 3
 crypto = []
 fetch = []
 llm = []
+b64 = []
 default = ["crypto", "fetch"]

@@ -14,6 +14,8 @@ pub mod crypto;
 pub mod fetch;
 #[cfg(feature = "llm")]
 pub mod llm;
+#[cfg(feature = "b64")]
+pub mod b64;
 
 #[cfg(feature = "crypto")]
 use crypto::bless_get_random_values;
@@ -21,6 +23,8 @@ use crypto::bless_get_random_values;
 use fetch::bless_fetch_request;
 #[cfg(feature = "llm")]
 use llm::bless_llm_plugin;
+#[cfg(feature = "b64")]
+use b64::{bless_b64_decode, bless_b64_encode};
 
 import_namespace!("bless_core_plugins");
 
@@ -87,6 +91,37 @@ pub extern "C" fn initialize_runtime() {
                 ctx.eval::<(), _>(include_str!("crypto/crypto.js"))?;
                 #[cfg(feature = "fetch")]
                 ctx.eval::<(), _>(include_str!("fetch/fetch.js"))?;
+
+                #[cfg(feature = "b64")]
+                {
+                    ctx.globals().set(
+                        "__javy_b64_encode",
+                        Function::new(
+                            ctx.clone(),
+                            MutFn::new(move |cx, args| {
+                                let (cx, args) = hold_and_release!(cx, args);
+                                bless_b64_encode(hold!(cx.clone(), args))
+                                    .map_err(|e| to_js_error(cx, e))
+                            }),
+                        )?,
+                    )?;
+
+                    ctx.globals().set(
+                        "__javy_b64_decode",
+                        Function::new(
+                            ctx.clone(),
+                            MutFn::new(move |cx, args| {
+                                let (cx, args) = hold_and_release!(cx, args);
+                                bless_b64_decode(hold!(cx.clone(), args))
+                                    .map_err(|e| to_js_error(cx, e))
+                            }),
+                        )?,
+                    )?;
+
+                    ctx.eval::<(), _>(include_str!("b64/b64.js"))?;
+                }
+
+                
                 Ok::<_, anyhow::Error>(())
             })
             .unwrap();

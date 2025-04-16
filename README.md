@@ -9,6 +9,7 @@ These are the plugins for the [Javy](https://github.com/blessnetwork/bls-javy) r
 | `BlessLLM` | A plugin for interacting with LLMs | ✅ | ✅ |
 | `BlessFetch` | A plugin for interacting with HTTP / fetch | ✅ | ✅ |
 | `BlessCrypto` | A plugin for interacting with the crypto library | ✅ | ✅ |
+| `Base64` | A plugin for base64 encoding and decoding | ✅ | ✅ |
 
 ## Architecture
 
@@ -18,6 +19,7 @@ flowchart TD
         BC["BlessCrypto"]:::source
         BF["BlessFetch"]:::source
         BL["BlessLLM"]:::source
+        B64["Base64"]:::source
     end
 
     subgraph "Build Pipeline"
@@ -43,6 +45,7 @@ flowchart TD
     BC -->|"compile"| CBP
     BF -->|"compile"| CBP
     BL -->|"compile"| CBP
+    B64 -->|"compile"| CBP
 
     %% Build Pipeline Flow
     CBP -->|"wasm_build"| IWP
@@ -63,6 +66,7 @@ flowchart TD
     click BC "https://github.com/blessnetwork/javy-bless-plugins/tree/main/src/crypto"
     click BF "https://github.com/blessnetwork/javy-bless-plugins/tree/main/src/fetch"
     click BL "https://github.com/blessnetwork/javy-bless-plugins/tree/main/src/llm"
+    click B64 "https://github.com/blessnetwork/javy-bless-plugins/tree/main/src/b64"
     click EJS "https://github.com/blessnetwork/javy-bless-plugins/blob/main/examples/llm.js"
     click CBP "https://github.com/blessnetwork/javy-bless-plugins/blob/main/Cargo.toml"
     click MF "https://github.com/blessnetwork/javy-bless-plugins/tree/main/Makefile"
