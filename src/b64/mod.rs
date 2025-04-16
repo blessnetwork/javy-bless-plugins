@@ -8,7 +8,9 @@ use std::slice;
 /// `btoa(buffer: ArrayBuffer, offset: usize, length: usize) -> String`
 pub fn bless_b64_encode(args: Args) -> anyhow::Result<Value> {
     let ctx = args.context();
-    let js_val = args.get(0).ok_or_else(|| anyhow::anyhow!("Missing buffer"))?;
+    let js_val = args
+        .get(0)
+        .ok_or_else(|| anyhow::anyhow!("Missing buffer"))?;
     let offset = args.get(1).and_then(|v| v.as_i32()).unwrap_or(0) as usize;
     let len = args.get(2).and_then(|v| v.as_i32()).unwrap_or(0) as usize;
 
