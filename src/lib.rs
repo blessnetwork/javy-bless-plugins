@@ -8,23 +8,23 @@ use javy_plugin_api::{
     Config,
 };
 
+#[cfg(feature = "b64")]
+pub mod b64;
 #[cfg(feature = "crypto")]
 pub mod crypto;
 #[cfg(feature = "fetch")]
 pub mod fetch;
 #[cfg(feature = "llm")]
 pub mod llm;
-#[cfg(feature = "b64")]
-pub mod b64;
 
+#[cfg(feature = "b64")]
+use b64::{bless_b64_decode, bless_b64_encode};
 #[cfg(feature = "crypto")]
 use crypto::bless_get_random_values;
 #[cfg(feature = "fetch")]
 use fetch::bless_fetch_request;
 #[cfg(feature = "llm")]
 use llm::bless_llm_plugin;
-#[cfg(feature = "b64")]
-use b64::{bless_b64_decode, bless_b64_encode};
 
 import_namespace!("bless_core_plugins");
 
@@ -121,7 +121,6 @@ pub extern "C" fn initialize_runtime() {
                     ctx.eval::<(), _>(include_str!("b64/b64.js"))?;
                 }
 
-                
                 Ok::<_, anyhow::Error>(())
             })
             .unwrap();
