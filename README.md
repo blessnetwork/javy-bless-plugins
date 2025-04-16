@@ -9,7 +9,7 @@ These are the plugins for the [Javy](https://github.com/blessnetwork/bls-javy) r
 | `BlessLLM` | A plugin for interacting with LLMs | ✅ | ✅ |
 | `BlessFetch` | A plugin for interacting with HTTP / fetch | ✅ | ✅ |
 | `BlessCrypto` | A plugin for interacting with the crypto library | ✅ | ✅ |
-| `Base64` | A plugin for base64 encoding and decoding | ✅ | ✅ |
+| `Base64` | A plugin for base64 encoding and decoding |  | ✅ |
 
 ## Architecture
 
