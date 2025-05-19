@@ -112,11 +112,13 @@ pub fn wasi_preview1_fd_prestat_dir_name(args: Args<'_>) -> Result<Value<'_>> {
             args.len()
         );
     };
-    let mut path_len: i32 = 0;
+    let mut path_len_buf = [0u8; 8];
     let fd = fd.as_int()
         .ok_or_else(|| anyhow!("fd must be a number"))?;
-    let path_len_ptr = (&mut path_len as *mut i32) as i32;
+    let path_len_ptr: i32 = path_len_buf.as_mut_ptr() as i32;
     let rs = unsafe { preview_1::fd_prestat_get(fd, path_len_ptr) };
+    let path_len_buf: [u8; 4] = path_len_buf[4..].try_into()?;
+    let path_len = i32::from_le_bytes(path_len_buf);
     let obj = JObject::new(cx)?;
     if rs != 0  {
         obj.set("code", -rs)?;
@@ -126,8 +128,8 @@ pub fn wasi_preview1_fd_prestat_dir_name(args: Args<'_>) -> Result<Value<'_>> {
     let rs = unsafe { 
         preview_1::fd_prestat_dir_name(
             fd, 
-            path_buf.as_mut_ptr() as i32, 
-            path_len
+            path_buf.as_mut_ptr() as *const i32 as i32, 
+            path_len as _
         ) 
     };
     obj.set("code", -rs)?;

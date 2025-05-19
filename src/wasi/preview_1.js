@@ -48,12 +48,14 @@
         TRUNC: 0x8,
     }
 
+    // This function is used to open a file with the specified path and flags.
+    // It first checks if the path is valid and then determines the directory file descriptor (dirfd) for the path.
+    // It sets the appropriate flags and rights based on the specified mode (read, write, etc.).
     function open(path, flags = "r") {
         if (path == null) {
             throw new Error("Open error: Path is required");
         }
-        let dirfd_rs = dirfdForPath(path);
-        let dirfd = dirfd_rs.fd;
+        let {dirpath, dirfd} = dirfdForPath(path);
         let fd_lookup_flags = Lookupflags.SYMLINK_FOLLOW;;
         let fd_oflags = 0;
         let fd_rights = 0;
@@ -91,7 +93,7 @@
         } else {
             return null;
         }
-        path = path.substring(dir_name_rs.dir_name.length, path.length);
+        path = path.substring(dirpath.length, path.length);
         let fd_rights_inherited = fd_rights;
         let fd_flags = 0;
         let rs = __javy_wasi_preview1_open(
@@ -109,19 +111,20 @@
         return rs;
     }
 
+    // This function is used to get the directory name for a given file descriptor.
+    // It recursively calls itself with an incremented file descriptor until it finds a valid directory name.
     function dirfdForPath(path, fd = 3) {
         let dir_name_rs = __javy_wasi_preview1_fd_prestat_dir_name(fd);
         if (dir_name_rs.code == 0) {
             if (path.startsWith(dir_name_rs.dir_name)) {
                 dir_name_rs.fd = fd;
-                return dir_name_rs;
+                return {dirpath: dir_name_rs.dir_name, dirfd: fd};
             } else {
                 return dirfdForPath(path, fd + 1);
             }
         } else {
             throw new Error("wasi_preview1_fd_prestat_dir_name error: " + dir_name_rs.code);
         }
-        return null;
     }
 
     globalThis.wasi_preview1 = function () {
