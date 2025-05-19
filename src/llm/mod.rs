@@ -72,7 +72,8 @@ pub fn bless_llm_plugin(args: Args<'_>) -> Result<Value<'_>> {
         .to_string()
         .map_err(|_| anyhow!("invalid UTF-8 in model name"))?;
 
-    let model = Models::from_str(&model_name).unwrap();
+    let model =
+        Models::from_str(&model_name).map_err(|_| anyhow!("Invalid model name: {}", model_name))?;
 
     // Create BlocklessLlm instance using SDK
     let llm = Arc::new(Mutex::new(BlocklessLlm::new(model).unwrap()));
@@ -103,7 +104,8 @@ pub fn bless_llm_plugin(args: Args<'_>) -> Result<Value<'_>> {
                         .ok_or_else(|| anyhow!("options must be an object"))?;
 
                     let system_message = opts_obj.get::<_, Option<String>>("system_message")?;
-                    let tools_sse_urls = opts_obj.get::<_, Option<Vec<String>>>("tools_sse_urls")?;
+                    let tools_sse_urls =
+                        opts_obj.get::<_, Option<Vec<String>>>("tools_sse_urls")?;
                     let temperature = opts_obj.get::<_, Option<f64>>("temperature")?;
                     let top_p = opts_obj.get::<_, Option<f64>>("top_p")?;
                     let options = LlmOptions {
@@ -140,7 +142,7 @@ pub fn bless_llm_plugin(args: Args<'_>) -> Result<Value<'_>> {
                     let options = llm_ref.lock().unwrap().get_options().unwrap();
 
                     let opts_obj = Object::new(cx.clone())?;
-                    
+
                     // Handle Option<String> for system_message
                     if let Some(system_msg) = &options.system_message {
                         opts_obj.set(
@@ -148,13 +150,14 @@ pub fn bless_llm_plugin(args: Args<'_>) -> Result<Value<'_>> {
                             Value::from_string(JSString::from_str(cx.clone(), system_msg)?),
                         )?;
                     }
-                    
+
                     // Handle Option<Vec<String>> for tools_sse_urls
                     if let Some(urls) = &options.tools_sse_urls {
                         let urls_array = Object::new(cx.clone())?;
 
                         // Set length property for array-like behavior
-                        urls_array.set("length", Value::new_number(cx.clone(), urls.len() as f64))?;
+                        urls_array
+                            .set("length", Value::new_number(cx.clone(), urls.len() as f64))?;
 
                         // Add each URL as a numerically-indexed property
                         for (i, url) in urls.iter().enumerate() {
@@ -167,7 +170,10 @@ pub fn bless_llm_plugin(args: Args<'_>) -> Result<Value<'_>> {
                     }
 
                     if let Some(temperature) = options.temperature {
-                        opts_obj.set("temperature", Value::new_number(cx.clone(), temperature.into()))?;
+                        opts_obj.set(
+                            "temperature",
+                            Value::new_number(cx.clone(), temperature.into()),
+                        )?;
                     }
                     if let Some(top_p) = options.top_p {
                         opts_obj.set("top_p", Value::new_number(cx.clone(), top_p.into()))?;
