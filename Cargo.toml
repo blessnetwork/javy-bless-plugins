@@ -29,4 +29,5 @@ opt-level = 3
 crypto = []
 fetch = []
 llm = []
-default = ["crypto", "fetch"]
+wasi = []
+default = ["crypto", "fetch", "wasi"]

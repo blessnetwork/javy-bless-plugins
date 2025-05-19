@@ -12,6 +12,8 @@ use javy_plugin_api::{
 pub mod crypto;
 #[cfg(feature = "fetch")]
 pub mod fetch;
+#[cfg(feature = "wasi")]
+pub mod wasi;
 #[cfg(feature = "llm")]
 pub mod llm;
 
@@ -19,6 +21,7 @@ pub mod llm;
 use crypto::bless_get_random_values;
 #[cfg(feature = "fetch")]
 use fetch::bless_fetch_request;
+
 #[cfg(feature = "llm")]
 use llm::bless_llm_plugin;
 
@@ -61,6 +64,28 @@ pub extern "C" fn initialize_runtime() {
                     )?,
                 )?;
 
+                #[cfg(feature = "wasi")]
+                {
+                    macro_rules! bind {
+                        ($l: ident) => {
+                            let name = concat!("__javy_", stringify!($l));
+                            ctx.globals().set(
+                                name,
+                                Function::new(
+                                    ctx.clone(),
+                                    MutFn::new(move |cx, args| {
+                                        let (cx, args) = hold_and_release!(cx, args);
+                                        wasi::$l(hold!(cx.clone(), args))
+                                            .map_err(|e| to_js_error(cx, e))
+                                    }),
+                                )?,
+                            )?;
+                        };
+                    }
+                    bind!(wasi_preview1_open);
+                    bind!(wasi_preview1_fd_prestat_dir_name);
+                }
+
                 #[cfg(feature = "llm")]
                 ctx.globals().set(
                     "BlessLLM",
@@ -87,6 +112,8 @@ pub extern "C" fn initialize_runtime() {
                 ctx.eval::<(), _>(include_str!("crypto/crypto.js"))?;
                 #[cfg(feature = "fetch")]
                 ctx.eval::<(), _>(include_str!("fetch/fetch.js"))?;
+                #[cfg(feature = "wasi")]
+                ctx.eval::<(), _>(include_str!("wasi/preview_1.js"))?;
                 Ok::<_, anyhow::Error>(())
             })
             .unwrap();
