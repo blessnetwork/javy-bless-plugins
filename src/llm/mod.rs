@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Result};
-use blockless_sdk::{BlocklessLlm, LlmOptions, SupportedModels};
+use blockless_sdk::{BlocklessLlm, LlmOptions, Models};
 use javy_plugin_api::javy::{
     hold, hold_and_release,
     quickjs::{prelude::MutFn, Function, Object, String as JSString, Value},
@@ -72,7 +72,7 @@ pub fn bless_llm_plugin(args: Args<'_>) -> Result<Value<'_>> {
         .to_string()
         .map_err(|_| anyhow!("invalid UTF-8 in model name"))?;
 
-    let model = SupportedModels::from_str(&model_name).unwrap();
+    let model = Models::from_str(&model_name).unwrap();
 
     // Create BlocklessLlm instance using SDK
     let llm = Arc::new(Mutex::new(BlocklessLlm::new(model).unwrap()));
@@ -102,10 +102,15 @@ pub fn bless_llm_plugin(args: Args<'_>) -> Result<Value<'_>> {
                         .as_object()
                         .ok_or_else(|| anyhow!("options must be an object"))?;
 
-                    let system_message = opts_obj.get::<_, String>("system_message")?;
+                    let system_message = opts_obj.get::<_, Option<String>>("system_message")?;
+                    let tools_sse_urls = opts_obj.get::<_, Option<Vec<String>>>("tools_sse_urls")?;
+                    let temperature = opts_obj.get::<_, Option<f64>>("temperature")?;
+                    let top_p = opts_obj.get::<_, Option<f64>>("top_p")?;
                     let options = LlmOptions {
                         system_message,
-                        ..Default::default()
+                        tools_sse_urls,
+                        temperature: temperature.map(|t| t as f32),
+                        top_p: top_p.map(|t| t as f32),
                     };
 
                     llm_ref
@@ -135,21 +140,38 @@ pub fn bless_llm_plugin(args: Args<'_>) -> Result<Value<'_>> {
                     let options = llm_ref.lock().unwrap().get_options().unwrap();
 
                     let opts_obj = Object::new(cx.clone())?;
-                    opts_obj.set(
-                        "system_message",
-                        Value::from_string(JSString::from_str(
-                            cx.clone(),
-                            &options.system_message,
-                        )?),
-                    )?;
-                    opts_obj.set(
-                        "temperature",
-                        Value::new_number(cx.clone(), options.temperature.unwrap_or(0.0) as f64),
-                    )?;
-                    opts_obj.set(
-                        "top_p",
-                        Value::new_number(cx.clone(), options.top_p.unwrap_or(0.0) as f64),
-                    )?;
+                    
+                    // Handle Option<String> for system_message
+                    if let Some(system_msg) = &options.system_message {
+                        opts_obj.set(
+                            "system_message",
+                            Value::from_string(JSString::from_str(cx.clone(), system_msg)?),
+                        )?;
+                    }
+                    
+                    // Handle Option<Vec<String>> for tools_sse_urls
+                    if let Some(urls) = &options.tools_sse_urls {
+                        let urls_array = Object::new(cx.clone())?;
+
+                        // Set length property for array-like behavior
+                        urls_array.set("length", Value::new_number(cx.clone(), urls.len() as f64))?;
+
+                        // Add each URL as a numerically-indexed property
+                        for (i, url) in urls.iter().enumerate() {
+                            urls_array.set(
+                                &i.to_string(),
+                                Value::from_string(JSString::from_str(cx.clone(), url)?),
+                            )?;
+                        }
+                        opts_obj.set("tools_sse_urls", Value::from_object(urls_array))?;
+                    }
+
+                    if let Some(temperature) = options.temperature {
+                        opts_obj.set("temperature", Value::new_number(cx.clone(), temperature.into()))?;
+                    }
+                    if let Some(top_p) = options.top_p {
+                        opts_obj.set("top_p", Value::new_number(cx.clone(), top_p.into()))?;
+                    }
 
                     Ok(Value::from_object(opts_obj))
                 };
