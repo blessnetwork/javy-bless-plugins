@@ -1,3 +1,4 @@
+use error::WasiError;
 use javy_plugin_api::javy::{
     quickjs::{Object as JObject, Value}, 
     Args
@@ -5,6 +6,8 @@ use javy_plugin_api::javy::{
 use anyhow::{anyhow, bail, Result};
 
 mod preview_1;
+mod error;
+
 
 pub fn wasi_preview1_open<'a>(args: Args<'a>) -> Result<Value<'a>> {
     let (cx, args) = args.release();
@@ -60,7 +63,7 @@ pub fn wasi_preview1_open<'a>(args: Args<'a>) -> Result<Value<'a>> {
         .map_err(|_| anyhow!("invalid UTF-8 in path"))?;
     let path_ptr = path.as_ptr() as i32;
     let path_len = path.len() as i32;
-    let mut rs = unsafe {
+    let rs = unsafe {
         preview_1::path_open(
         dirfd, 
         fd_lookup_flags, 
@@ -73,13 +76,23 @@ pub fn wasi_preview1_open<'a>(args: Args<'a>) -> Result<Value<'a>> {
         opened_fd_ptr)
     };
 
-    if rs == 0 {
-        rs = opened_fd;
+    let rs_obj = JObject::new(cx.clone())?;
+    rs_obj.set("fd", opened_fd)?;
+    set_error(&rs_obj, rs)?;
+    Ok(Value::from_object(rs_obj))
+}
+
+#[inline]
+fn set_error(obj: &JObject, rs: i32) -> Result<()> {
+    let error_messgae = if rs != 0 {
+        let error: WasiError = rs.into();
+        error.to_string()
     } else {
-        rs = -rs;
-    }
-    
-    Ok(Value::new_int(cx, rs))
+        "Success".to_string()
+    };
+    obj.set("errno", rs)?;
+    obj.set("error", error_messgae)?;
+    Ok(())
 }
 
 pub fn wasi_preview1_close<'a>(args: Args<'a>) -> Result<Value<'a>> {
@@ -97,7 +110,9 @@ pub fn wasi_preview1_close<'a>(args: Args<'a>) -> Result<Value<'a>> {
     let fd = fd.as_int()
         .ok_or_else(|| anyhow!("fd must be a number"))?;
     let rs = unsafe { preview_1::fd_close(fd) };
-    Ok(Value::new_int(cx, -rs))
+    let rs_obj = JObject::new(cx.clone())?;
+    set_error(&rs_obj, rs)?;
+    Ok(Value::from_object(rs_obj))
 }
 
 pub fn wasi_preview1_fd_prestat_dir_name(args: Args<'_>) -> Result<Value<'_>> {
@@ -121,7 +136,7 @@ pub fn wasi_preview1_fd_prestat_dir_name(args: Args<'_>) -> Result<Value<'_>> {
     let path_len = i32::from_le_bytes(path_len_buf);
     let obj = JObject::new(cx)?;
     if rs != 0  {
-        obj.set("code", -rs)?;
+        set_error(&obj, rs)?;
         return Ok(Value::from_object(obj))
     }
     let mut path_buf = vec![0u8; path_len as usize];
@@ -132,11 +147,12 @@ pub fn wasi_preview1_fd_prestat_dir_name(args: Args<'_>) -> Result<Value<'_>> {
             path_len as _
         ) 
     };
-    obj.set("code", -rs)?;
     if rs == 0  {
         let path = String::from_utf8(path_buf)?;
         obj.set("dir_name", path)?;
     }
+    set_error(&obj, rs)?;
+    println!("fd_prestat_dir_name -");
     Ok(Value::from_object(obj))
 }
 

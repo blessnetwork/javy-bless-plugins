@@ -105,8 +105,8 @@
             fd_rights_inherited,
             fd_flags,
         )
-        if (rs < 0) {
-            throw new Error("Open error: " + rs);
+        if (rs.errno != 0) {
+            throw new Error("Open error: " + rs.error);
         }
         return rs;
     }
@@ -114,16 +114,16 @@
     // This function is used to get the directory name for a given file descriptor.
     // It recursively calls itself with an incremented file descriptor until it finds a valid directory name.
     function dirfdForPath(path, fd = 3) {
-        let dir_name_rs = __javy_wasi_preview1_fd_prestat_dir_name(fd);
-        if (dir_name_rs.code == 0) {
-            if (path.startsWith(dir_name_rs.dir_name)) {
-                dir_name_rs.fd = fd;
-                return {dirpath: dir_name_rs.dir_name, dirfd: fd};
+        let rs = __javy_wasi_preview1_fd_prestat_dir_name(fd);
+        if (rs.errno == 0) {
+            if (path.startsWith(rs.dir_name)) {
+                rs.fd = fd;
+                return {dirpath: rs.dir_name, dirfd: fd};
             } else {
                 return dirfdForPath(path, fd + 1);
             }
         } else {
-            throw new Error("wasi_preview1_fd_prestat_dir_name error: " + dir_name_rs.code);
+            throw new Error("wasi_preview1_fd_prestat_dir_name error: " + rs.error);
         }
     }
 

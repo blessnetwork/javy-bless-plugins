@@ -20,6 +20,7 @@ javy-plugin-api = { version = "3.0.0", features = ["json"] }
 rand = "0.8.5"
 serde_json = "1.0.120"
 serde = { version = "1.0.215", features = ["derive"] }
+thiserror = "2.0.12"
 
 [profile.release]
 lto = true

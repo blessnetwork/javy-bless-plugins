@@ -67,7 +67,7 @@ pub extern "C" fn initialize_runtime() {
                 #[cfg(feature = "wasi")]
                 {
                     macro_rules! bind {
-                        ($l: ident) => {
+                        (function, $l: ident) => {
                             let name = concat!("__javy_", stringify!($l));
                             ctx.globals().set(
                                 name,
@@ -82,8 +82,8 @@ pub extern "C" fn initialize_runtime() {
                             )?;
                         };
                     }
-                    bind!(wasi_preview1_open);
-                    bind!(wasi_preview1_fd_prestat_dir_name);
+                    bind!(function, wasi_preview1_open);
+                    bind!(function, wasi_preview1_fd_prestat_dir_name);
                 }
 
                 #[cfg(feature = "llm")]
