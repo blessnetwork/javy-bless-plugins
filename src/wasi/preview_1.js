@@ -1,9 +1,19 @@
 
 // Wrap everything in an anonymous function to avoid leaking local variables into the global scope.
 (function () {
+    
+    let lastErr = {
+        errno: 0,
+        error: "",
+    }
     // Get a reference to the function before we delete it from `globalThis`.
     const __javy_wasi_preview1_open = globalThis.__javy_wasi_preview1_open;
     const __javy_wasi_preview1_fd_prestat_dir_name = globalThis.__javy_wasi_preview1_fd_prestat_dir_name;
+    const __javy_wasi_preview1_path_create_directory = globalThis.__javy_wasi_preview1_path_create_directory;
+    const __javy_wasi_preview1_path_remove_directory = globalThis.__javy_wasi_preview1_path_remove_directory;
+    const __javy_wasi_preview1_path_unlink_file = globalThis.__javy_wasi_preview1_path_unlink_file;
+
+    const InvalParameter = 0x1C
     const Rights  = {
         FD_DATASYNC: 0x1,
         FD_READ: 0x2,
@@ -53,9 +63,15 @@
     // It sets the appropriate flags and rights based on the specified mode (read, write, etc.).
     function open(path, flags = "r") {
         if (path == null) {
-            throw new Error("Open error: Path is required");
+            lastErr.errno = InvalParameter;
+            lastErr.error = "Path is required";
+            return null;
         }
-        let {dirpath, dirfd} = dirfdForPath(path);
+        const dirpathObj = dirfdForPath(path);
+        if (dirpathObj == null) {
+            return false;
+        }
+        const {dirpath, dirfd} = dirpathObj;
         let fd_lookup_flags = Lookupflags.SYMLINK_FOLLOW;;
         let fd_oflags = 0;
         let fd_rights = 0;
@@ -96,7 +112,7 @@
         path = path.substring(dirpath.length, path.length);
         let fd_rights_inherited = fd_rights;
         let fd_flags = 0;
-        let rs = __javy_wasi_preview1_open(
+        const {errno, fd, error} = __javy_wasi_preview1_open(
             dirfd,
             fd_lookup_flags,
             path,
@@ -105,10 +121,74 @@
             fd_rights_inherited,
             fd_flags,
         )
-        if (rs.errno != 0) {
-            throw new Error("Open error: " + rs.error);
+        lastErr = {errno, error}
+        if (errno != 0) {
+            return 
         }
-        return rs;
+        return fd;
+    }
+
+    // This function is used to create a new directory with the specified path.
+    // It first checks if the path is valid and then determines the directory file descriptor (dirfd) for the path.
+    function mkdir(path) {
+        if (path == null) {
+            lastErr.errno = InvalParameter;
+            lastErr.error = "Path is required";
+            return false;
+        }
+        const dirpathObj = dirfdForPath(path);
+        if (dirpathObj == null) {
+            return false;
+        }
+        const {dirpath, dirfd} = dirpathObj;
+        path = path.substring(dirpath.length, path.length);
+        lastErr = __javy_wasi_preview1_path_create_directory(dirfd, path)
+        if (lastErr.errno != 0) {
+            return false;
+        }
+        return true;
+    }
+
+    // This function is used to remove a directory with the specified path.
+    // It first checks if the path is valid and then determines the directory file descriptor (dirfd) for the path.
+    function rmdir(path) {
+        if (path == null) {
+            lastErr.errno = InvalParameter;
+            lastErr.error = "Path is required";
+            return false;
+        }
+        const dirpathObj = dirfdForPath(path);
+        if (dirpathObj == null) {
+            return false;
+        }
+        const {dirpath, dirfd} = dirpathObj;
+        path = path.substring(dirpath.length, path.length);
+        lastErr = __javy_wasi_preview1_path_remove_directory(dirfd, path)
+        if (lastErr.errno != 0) {
+            return false;
+        }
+        return true;
+    }
+
+    // This function is used to unlink (delete) a file with the specified path.
+    // It first checks if the path is valid and then determines the directory file descriptor (dirfd) for the path.
+    function unlink(path) {
+        if (path == null) {
+            lastErr.errno = InvalParameter;
+            lastErr.error = "Path is required";
+            return false;
+        }
+        const dirpathObj = dirfdForPath(path);
+        if (dirpathObj == null) {
+            return false;
+        }
+        const {dirpath, dirfd} = dirpathObj;
+        path = path.substring(dirpath.length, path.length);
+        lastErr = __javy_wasi_preview1_path_unlink_file(dirfd, path)
+        if (lastErr.errno != 0) {
+            return false;
+        }
+        return true;
     }
 
     // This function is used to get the directory name for a given file descriptor.
@@ -123,18 +203,26 @@
                 return dirfdForPath(path, fd + 1);
             }
         } else {
-            throw new Error("wasi_preview1_fd_prestat_dir_name error: " + rs.error);
+            lastErr = rs
+            return null;
         }
     }
 
-    globalThis.wasi_preview1 = function () {
+    globalThis.wasi_fs = function () {
         return {
             open,
+            mkdir,
+            rmdir,
+            unlink,
+            errno: () => lastErr.errno,
+            error: () => lastErr.error,
         };
     }();
 
     // Delete the function from `globalThis` so it doesn't leak.
     Reflect.deleteProperty(globalThis, "__javy_wasi_preview1_open");
-
     Reflect.deleteProperty(globalThis, "__javy_wasi_preview1_fd_prestat_dir_name");
+    Reflect.deleteProperty(globalThis, "__javy_wasi_preview1_path_create_directory");
+    Reflect.deleteProperty(globalThis, "__javy_wasi_preview1_path_remove_directory");
+    Reflect.deleteProperty(globalThis, "__javy_wasi_preview1_path_unlink_file");
 })();

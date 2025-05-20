@@ -8,7 +8,8 @@ use anyhow::{anyhow, bail, Result};
 mod preview_1;
 mod error;
 
-
+/// This function is used to open a file at the given path.
+/// It is used to open a file at the given path.
 pub fn wasi_preview1_open<'a>(args: Args<'a>) -> Result<Value<'a>> {
     let (cx, args) = args.release();
     let args_pat: &[Value<'_>]= &args.0;
@@ -95,6 +96,7 @@ fn set_error(obj: &JObject, rs: i32) -> Result<()> {
     Ok(())
 }
 
+/// This function is used to close a file descriptor.
 pub fn wasi_preview1_close<'a>(args: Args<'a>) -> Result<Value<'a>> {
     let (cx, args) = args.release();
     let args_pat: &[Value<'_>]= &args.0;
@@ -115,6 +117,101 @@ pub fn wasi_preview1_close<'a>(args: Args<'a>) -> Result<Value<'a>> {
     Ok(Value::from_object(rs_obj))
 }
 
+/// This function is used to create a directory at the given path.
+/// It is used to create a directory at the given path.
+/// The directory must not exist.
+pub fn wasi_preview1_path_create_directory(args: Args<'_>) -> Result<Value<'_>> {
+    let (cx, args) = args.release();
+    let args_pat: &[Value<'_>]= &args.0;
+    let [
+        dirfd,
+        path,
+        ..
+    ] =  args_pat else {
+        bail!(
+            "path_create_directory expects 2 parameters: the dirfd and path, Got: {} parameters.",
+            args.len()
+        );
+    };
+    let dirfd = dirfd.as_int()
+        .ok_or_else(|| anyhow!("dirfd must be a number"))?;
+    let path = path.as_string()
+        .ok_or_else(|| anyhow!("path must be a string"))?
+        .to_string()
+        .map_err(|_| anyhow!("invalid UTF-8 in path"))?;
+    let path_ptr = path.as_ptr() as i32;
+    let path_len = path.len() as i32;
+    let rs = unsafe { preview_1::path_create_directory(dirfd, path_ptr, path_len) };
+    let rs_obj = JObject::new(cx.clone())?;
+    set_error(&rs_obj, rs)?;
+    Ok(Value::from_object(rs_obj))
+}
+
+/// Remove a directory at the given path.
+/// This function is used to remove a directory at the given path.
+/// It is used to remove a directory at the given path.
+pub fn wasi_preview1_path_remove_directory(args: Args<'_>) -> Result<Value<'_>> {
+    let (cx, args) = args.release();
+    let args_pat: &[Value<'_>]= &args.0;
+    let [
+        dirfd,
+        path,
+        ..
+    ] =  args_pat else {
+        bail!(
+            "path_remove_directory expects 2 parameters: the dirfd and path, Got: {} parameters.",
+            args.len()
+        );
+    };
+    let dirfd = dirfd.as_int()
+        .ok_or_else(|| anyhow!("dirfd must be a number"))?;
+    let path = path.as_string()
+        .ok_or_else(|| anyhow!("path must be a string"))?
+        .to_string()
+        .map_err(|_| anyhow!("invalid UTF-8 in path"))?;
+    let path_ptr = path.as_ptr() as i32;
+    let path_len = path.len() as i32;
+    let rs = unsafe { preview_1::path_remove_directory(dirfd, path_ptr, path_len) };
+    let rs_obj = JObject::new(cx.clone())?;
+    set_error(&rs_obj, rs)?;
+    Ok(Value::from_object(rs_obj))
+}
+
+/// Unlink a file at the given path.
+pub fn wasi_preview1_path_unlink_file(args: Args<'_>) -> Result<Value<'_>> {
+    let (cx, args) = args.release();
+    let args_pat: &[Value<'_>]= &args.0;
+    let [
+        dirfd,
+        path,
+        ..
+    ] =  args_pat else {
+        bail!(
+            "path_unlink_file expects 2 parameters: the dirfd and path, Got: {} parameters.",
+            args.len()
+        );
+    };
+
+    // dirfd is the file descriptor of the directory
+    let dirfd = dirfd.as_int()
+        .ok_or_else(|| anyhow!("dirfd must be a number"))?;
+    // path is the path to the file
+    let path = path.as_string()
+        .ok_or_else(|| anyhow!("path must be a string"))?
+        .to_string()
+        .map_err(|_| anyhow!("invalid UTF-8 in path"))?;
+    let path_ptr = path.as_ptr() as i32;
+    let path_len = path.len() as i32;
+    let rs = unsafe { preview_1::path_unlink_file(dirfd, path_ptr, path_len) };
+    let rs_obj = JObject::new(cx.clone())?;
+    set_error(&rs_obj, rs)?;
+    Ok(Value::from_object(rs_obj))
+}
+
+
+/// This function is used to get the directory name of a file descriptor.
+/// It is used to get the directory name of a file descriptor.
+/// The file descriptor must be a directory.
 pub fn wasi_preview1_fd_prestat_dir_name(args: Args<'_>) -> Result<Value<'_>> {
     let (cx, args) = args.release();
     let args_pat: &[Value<'_>]= &args.0;
@@ -152,7 +249,6 @@ pub fn wasi_preview1_fd_prestat_dir_name(args: Args<'_>) -> Result<Value<'_>> {
         obj.set("dir_name", path)?;
     }
     set_error(&obj, rs)?;
-    println!("fd_prestat_dir_name -");
     Ok(Value::from_object(obj))
 }
 

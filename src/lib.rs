@@ -84,6 +84,9 @@ pub extern "C" fn initialize_runtime() {
                     }
                     bind!(function, wasi_preview1_open);
                     bind!(function, wasi_preview1_fd_prestat_dir_name);
+                    bind!(function, wasi_preview1_path_create_directory);
+                    bind!(function, wasi_preview1_path_remove_directory);
+                    bind!(function, wasi_preview1_path_unlink_file);
                 }
 
                 #[cfg(feature = "llm")]

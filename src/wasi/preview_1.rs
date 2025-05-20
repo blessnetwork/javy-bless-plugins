@@ -13,18 +13,41 @@ unsafe extern "C" {
         fd_ptr: i32,
    ) -> i32;
 
+   #[link_name = "path_create_directory"]
+    pub unsafe fn path_create_directory(
+        dirfd: i32,
+        path_ptr: i32,
+        path_len: i32,
+   ) -> i32;
+
+   #[link_name = "path_remove_directory"]
+    pub unsafe fn path_remove_directory(
+        dirfd: i32,
+        path_ptr: i32,
+        path_len: i32,
+   ) -> i32;
+
+
+   #[link_name = "path_unlink_file"]
+    pub unsafe fn path_unlink_file(
+        dirfd: i32,
+        path_ptr: i32,
+        path_len: i32,
+   ) -> i32;
+
+   #[link_name = "path_symlink"]
+    pub unsafe fn path_symlink(
+        old_path_ptr: i32,
+        old_path_len: i32,
+        dirfd: i32,
+        new_path_ptr: i32,
+        new_path_len: i32,
+    ) -> i32;
+
    #[link_name = "fd_close"]
     pub unsafe fn fd_close(
        fd: i32,
    ) -> i32;
-
-    #[link_name = "fd_read"]
-     pub unsafe fn fd_read(
-         fd: i32,
-         iovs: i32,
-         iovs_len: i32,
-         nread: i32,
-    ) -> i32;
 
     #[link_name = "fd_prestat_get"]
     pub unsafe fn fd_prestat_get(
@@ -38,5 +61,7 @@ unsafe extern "C" {
         path_ptr: i32,
         path_len: i32,
     ) -> i32;
+
+
 
 }
