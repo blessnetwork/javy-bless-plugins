@@ -86,11 +86,11 @@ flowchart TD
 
 ```sh
 # build bless plugins
-cargo build --target=wasm32-wasip1 --release
+cargo build --target=wasm32-wasip1 --release --all-features
 
 # rebuild the plugin-wasm with javy runtime CLI
 javy init-plugin ./target/wasm32-wasip1/release/bless_plugins.wasm -o bless_plugins.wasm
 
-# compile javascript to wasm with javy runtime and plugin
+# compile javascript to wasm with javy QuickJS runtime and plugin - to be executed in a WASM runtime
 javy build -C plugin=bless_plugins.wasm ./examples/llm.js -o bless-llm.wasm
 ```

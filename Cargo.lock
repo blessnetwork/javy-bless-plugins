@@ -72,9 +72,9 @@ checksum = "8f68f53c83ab957f72c32642f3868eec03eb974d1fb82e453128456482613d36"
 
 [[package]]
 name = "blockless-sdk"
-version = "0.1.8"
+version = "0.1.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d392795cf239e8c57625262aaaa952924d631e0b37a76872897b5b557934de8d"
+checksum = "25f2739adfd37df55c6ad467ffd3e41d9d2ef1f30a1d5f9f2bb39bf4e736cd70"
 dependencies = [
  "json",
  "serde",
@@ -295,7 +295,7 @@ dependencies = [
 
 [[package]]
 name = "javy-bless-plugins"
-version = "0.2.1"
+version = "0.2.3"
 dependencies = [
  "anyhow",
  "blockless-sdk",
