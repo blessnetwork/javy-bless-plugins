@@ -4,7 +4,7 @@ use javy_plugin_api::javy::{
 };
 use anyhow::{anyhow, bail, Result};
 
-use super::{preview_1, set_error};
+use super::{preview_1, process_error};
 
 /// This function is used to open a file at the given path.
 /// It is used to open a file at the given path.
@@ -77,6 +77,6 @@ pub fn wasi_preview1_open<'a>(args: Args<'a>) -> Result<Value<'a>> {
 
     let rs_obj = JObject::new(cx.clone())?;
     rs_obj.set("fd", opened_fd)?;
-    set_error(&rs_obj, rs)?;
+    process_error(&rs_obj, rs)?;
     Ok(Value::from_object(rs_obj))
 }

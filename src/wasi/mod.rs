@@ -12,16 +12,20 @@ mod mkdir;
 mod rmdir;
 mod unlink;
 mod close;
+mod symlink;
+mod link;
 pub(crate) use open::wasi_preview1_open;
 pub(crate) use mkdir::wasi_preview1_path_create_directory;
 pub(crate) use rmdir::wasi_preview1_path_remove_directory;
 pub(crate) use unlink::wasi_preview1_path_unlink_file;
 pub(crate) use close::wasi_preview1_close;
+pub(crate) use symlink::wasi_preview1_path_symlink;
+pub(crate) use link::wasi_preview1_path_link;
 pub use error::WasiError;
 
 
 #[inline]
-pub fn set_error(obj: &JObject, rs: i32) -> Result<()> {
+pub fn process_error(obj: &JObject, rs: i32) -> Result<()> {
     let error_messgae = if rs != 0 {
         let error: WasiError = rs.into();
         error.to_string()
@@ -57,7 +61,7 @@ pub fn wasi_preview1_fd_prestat_dir_name(args: Args<'_>) -> Result<Value<'_>> {
     let path_len = i32::from_le_bytes(path_len_buf);
     let obj = JObject::new(cx)?;
     if rs != 0  {
-        set_error(&obj, rs)?;
+        process_error(&obj, rs)?;
         return Ok(Value::from_object(obj))
     }
     let mut path_buf = vec![0u8; path_len as usize];
@@ -72,7 +76,7 @@ pub fn wasi_preview1_fd_prestat_dir_name(args: Args<'_>) -> Result<Value<'_>> {
         let path = String::from_utf8(path_buf)?;
         obj.set("dir_name", path)?;
     }
-    set_error(&obj, rs)?;
+    process_error(&obj, rs)?;
     Ok(Value::from_object(obj))
 }
 

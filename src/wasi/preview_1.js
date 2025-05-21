@@ -12,6 +12,8 @@
     const __javy_wasi_preview1_path_create_directory = globalThis.__javy_wasi_preview1_path_create_directory;
     const __javy_wasi_preview1_path_remove_directory = globalThis.__javy_wasi_preview1_path_remove_directory;
     const __javy_wasi_preview1_path_unlink_file = globalThis.__javy_wasi_preview1_path_unlink_file;
+    const __javy_wasi_preview1_path_symlink = globalThis.__javy_wasi_preview1_path_symlink;
+    const __javy_wasi_preview1_path_link = globalThis.__javy_wasi_preview1_path_link;
 
     const InvalParameter = 0x1C
     const Rights  = {
@@ -190,6 +192,57 @@
         }
         return true;
     }
+    
+    // This function is used to create a symbolic link from oldpath to newpath.
+    // It first checks if the newpath is valid and then determines the directory file descriptor (dirfd) for the newpath.
+    function symlink(oldpath, newpath) {
+        if (oldpath == null || newpath == null) {
+            lastErr.errno = InvalParameter;
+            lastErr.error = "Path is required";
+            return false;
+        }
+        const dirpathObj = dirfdForPath(newpath);
+        if (dirpathObj == null) {
+            return false;
+        }
+        const {dirpath, dirfd} = dirpathObj;
+        newpath = newpath.substring(dirpath.length, newpath.length);
+        lastErr = __javy_wasi_preview1_path_symlink(oldpath, dirfd, newpath)
+        if (lastErr.errno != 0) {
+            return false;
+        }
+        return true;
+    }
+
+    // 
+    function link(oldpath, newpath) {
+        if (oldpath == null || newpath == null) {
+            lastErr.errno = InvalParameter;
+            lastErr.error = "Path is required";
+            return false;
+        }
+        const old_dirpath_rs = dirfdForPath(oldpath);
+        if (old_dirpath_rs == null) {
+            return false;
+        }
+
+        const new_dirpath_rs = dirfdForPath(newpath);
+        if (new_dirpath_rs == null) {
+            return false;
+        }
+        const old_dirpath = old_dirpath_rs.dirpath;
+        const old_dirfd = old_dirpath_rs.dirfd;
+        
+        const new_dirpath = new_dirpath_rs.dirpath;
+        const new_dirfd = new_dirpath_rs.dirfd;
+        newpath = newpath.substring(new_dirpath.length, newpath.length);
+        oldpath = oldpath.substring(old_dirpath.length, oldpath.length);
+        lastErr = __javy_wasi_preview1_path_link(old_dirfd, 0, oldpath, new_dirfd, newpath);
+        if (lastErr.errno != 0) {
+            return false;
+        }
+        return true;
+    }
 
     // This function is used to get the directory name for a given file descriptor.
     // It recursively calls itself with an incremented file descriptor until it finds a valid directory name.
@@ -214,6 +267,8 @@
             mkdir,
             rmdir,
             unlink,
+            symlink,
+            link,
             errno: () => lastErr.errno,
             error: () => lastErr.error,
         };
@@ -225,4 +280,5 @@
     Reflect.deleteProperty(globalThis, "__javy_wasi_preview1_path_create_directory");
     Reflect.deleteProperty(globalThis, "__javy_wasi_preview1_path_remove_directory");
     Reflect.deleteProperty(globalThis, "__javy_wasi_preview1_path_unlink_file");
+    Reflect.deleteProperty(globalThis, "__javy_wasi_preview1_path_symlink");
 })();

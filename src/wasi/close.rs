@@ -4,7 +4,7 @@ use javy_plugin_api::javy::{
 };
 use anyhow::{anyhow, bail, Result};
 
-use super::{preview_1, set_error};
+use super::{preview_1, process_error};
 
 /// This function is used to close a file descriptor.
 pub fn wasi_preview1_close<'a>(args: Args<'a>) -> Result<Value<'a>> {
@@ -23,6 +23,6 @@ pub fn wasi_preview1_close<'a>(args: Args<'a>) -> Result<Value<'a>> {
         .ok_or_else(|| anyhow!("fd must be a number"))?;
     let rs = unsafe { preview_1::fd_close(fd) };
     let rs_obj = JObject::new(cx.clone())?;
-    set_error(&rs_obj, rs)?;
+    process_error(&rs_obj, rs)?;
     Ok(Value::from_object(rs_obj))
 }

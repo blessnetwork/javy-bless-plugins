@@ -4,7 +4,7 @@ use javy_plugin_api::javy::{
 };
 use anyhow::{anyhow, bail, Result};
 
-use super::{preview_1, set_error};
+use super::{preview_1, process_error};
 
 
 /// Remove a directory at the given path.
@@ -33,6 +33,6 @@ pub fn wasi_preview1_path_remove_directory(args: Args<'_>) -> Result<Value<'_>> 
     let path_len = path.len() as i32;
     let rs = unsafe { preview_1::path_remove_directory(dirfd, path_ptr, path_len) };
     let rs_obj = JObject::new(cx.clone())?;
-    set_error(&rs_obj, rs)?;
+    process_error(&rs_obj, rs)?;
     Ok(Value::from_object(rs_obj))
 }

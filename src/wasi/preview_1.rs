@@ -62,6 +62,15 @@ unsafe extern "C" {
         path_len: i32,
     ) -> i32;
 
-
+    #[link_name = "path_link"]
+    pub unsafe fn path_link(
+        old_dirfd: i32,
+        fd_lookup_flags: i32,
+        old_path: i32,
+        old_path_len: i32,
+        new_dirfd: i32,
+        new_path: i32,
+        new_path_len: i32,
+    ) -> i32;
 
 }
