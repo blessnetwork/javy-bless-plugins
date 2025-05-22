@@ -14,6 +14,8 @@
     const __javy_wasi_preview1_path_unlink_file = globalThis.__javy_wasi_preview1_path_unlink_file;
     const __javy_wasi_preview1_path_symlink = globalThis.__javy_wasi_preview1_path_symlink;
     const __javy_wasi_preview1_path_link = globalThis.__javy_wasi_preview1_path_link;
+    const __javy_wasi_preview1_path_rename = globalThis.__javy_wasi_preview1_path_rename;
+    const __javy_wasi_preview1_path_filestat_get = globalThis.__javy_wasi_preview1_path_filestat_get;
 
     const InvalParameter = 0x1C
     const Rights  = {
@@ -214,7 +216,7 @@
         return true;
     }
 
-    // 
+    // This function is used to create a hard link from oldpath to newpath.
     function link(oldpath, newpath) {
         if (oldpath == null || newpath == null) {
             lastErr.errno = InvalParameter;
@@ -244,6 +246,59 @@
         return true;
     }
 
+    function rename(oldpath, newpath) {
+        if (oldpath == null || newpath == null) {
+            lastErr.errno = InvalParameter;
+            lastErr.error = "Path is required";
+            return false;
+        }
+        const old_dirpath_rs = dirfdForPath(oldpath);
+        if (old_dirpath_rs == null) {
+            return false;
+        }
+
+        const new_dirpath_rs = dirfdForPath(newpath);
+        if (new_dirpath_rs == null) {
+            return false;
+        }
+        const old_dirpath = old_dirpath_rs.dirpath;
+        const old_dirfd = old_dirpath_rs.dirfd;
+        
+        const new_dirpath = new_dirpath_rs.dirpath;
+        const new_dirfd = new_dirpath_rs.dirfd;
+        newpath = newpath.substring(new_dirpath.length, newpath.length);
+        oldpath = oldpath.substring(old_dirpath.length, oldpath.length);
+        lastErr = __javy_wasi_preview1_path_rename(old_dirfd, oldpath, new_dirfd, newpath);
+        if (lastErr.errno != 0) {
+            return false;
+        }
+        return true;
+    }
+
+    function stat(path) {
+        if (path == null) {
+            lastErr.errno = InvalParameter;
+            lastErr.error = "Path is required";
+            return false;
+        }
+        const dirpath_rs = dirfdForPath(path);
+        if (dirpath_rs == null) {
+            return false;
+        }
+
+       
+        const dirpath = dirpath_rs.dirpath;
+        const dirfd = dirpath_rs.dirfd;
+        
+        path = path.substring(dirpath.length, path.length);
+        let {errno, error, stat} = __javy_wasi_preview1_path_filestat_get(dirfd, Lookupflags.SYMLINK_FOLLOW, path);
+        if (rs.errno != 0) {
+            lastErr = {errno, error};
+            return null;
+        }
+        return stat;
+    }
+
     // This function is used to get the directory name for a given file descriptor.
     // It recursively calls itself with an incremented file descriptor until it finds a valid directory name.
     function dirfdForPath(path, fd = 3) {
@@ -269,6 +324,8 @@
             unlink,
             symlink,
             link,
+            rename,
+            stat,
             errno: () => lastErr.errno,
             error: () => lastErr.error,
         };

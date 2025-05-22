@@ -14,6 +14,8 @@ mod unlink;
 mod close;
 mod symlink;
 mod link;
+mod rename;
+mod stat;
 pub(crate) use open::wasi_preview1_open;
 pub(crate) use mkdir::wasi_preview1_path_create_directory;
 pub(crate) use rmdir::wasi_preview1_path_remove_directory;
@@ -21,6 +23,8 @@ pub(crate) use unlink::wasi_preview1_path_unlink_file;
 pub(crate) use close::wasi_preview1_close;
 pub(crate) use symlink::wasi_preview1_path_symlink;
 pub(crate) use link::wasi_preview1_path_link;
+pub(crate) use rename::wasi_preview1_path_rename;
+pub(crate) use stat::wasi_preview1_path_filestat_get;
 pub use error::WasiError;
 
 
@@ -80,5 +84,32 @@ pub fn wasi_preview1_fd_prestat_dir_name(args: Args<'_>) -> Result<Value<'_>> {
     Ok(Value::from_object(obj))
 }
 
+#[derive(Default, Debug)]
+pub struct Filestat {
+    pub device_id: u64,
+    pub inode: u64,
+    pub filetype: u8,
+    pub nlink: u64,
+    pub size: u64, // this is a read field, the rest are file fields
+    pub atim: u64,
+    pub mtim: u64,
+    pub ctim: u64,
+}
 
+pub struct FileType(u8);
 
+impl Into<&str> for FileType {
+    fn into(self) -> &'static str {
+        match self.0 {
+            0 => "unknown",
+            1 => "block device",
+            2 => "character device",
+            3 => "directory",
+            4 => "regular file",
+            5 => "socket dgram",
+            6 => "socket stream",
+            7 => "symbolic link",
+            _ => unimplemented!("FileType not implemented"),
+        }
+    }
+}

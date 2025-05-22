@@ -90,6 +90,8 @@ pub extern "C" fn initialize_runtime() {
                     bind!(function, wasi_preview1_close);
                     bind!(function, wasi_preview1_path_symlink);
                     bind!(function, wasi_preview1_path_link);
+                    bind!(function, wasi_preview1_path_rename);
+                    bind!(function, wasi_preview1_path_filestat_get);
                 }
 
                 #[cfg(feature = "llm")]

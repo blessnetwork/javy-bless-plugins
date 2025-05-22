@@ -73,4 +73,24 @@ unsafe extern "C" {
         new_path_len: i32,
     ) -> i32;
 
+    #[link_name = "path_rename"]
+    pub unsafe fn path_rename(
+        old_dirfd: i32,
+        old_path: i32,
+        old_path_len: i32,
+        new_dirfd: i32,
+        new_path: i32,
+        new_path_len: i32,
+    ) -> i32;
+
+    
+
+    #[link_name = "path_filestat_get"]
+    pub unsafe fn path_filestat_get(
+        dirfd: i32,
+        flags: i32,
+        path: i32,
+        path_len: i32,
+        stat_ptr: i32,
+    ) -> i32;
 }
