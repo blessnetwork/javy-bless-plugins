@@ -292,7 +292,7 @@
         
         path = path.substring(dirpath.length, path.length);
         let {errno, error, stat} = __javy_wasi_preview1_path_filestat_get(dirfd, Lookupflags.SYMLINK_FOLLOW, path);
-        if (rs.errno != 0) {
+        if (errno != 0) {
             lastErr = {errno, error};
             return null;
         }

@@ -42,7 +42,6 @@ pub fn wasi_preview1_path_filestat_get(args: Args<'_>) -> Result<Value<'_>> {
     };
     let rs_obj = JObject::new(cx.clone())?;
     if rs == 0 {
-        println!("fd_stat: {:?}", fd_stat);
         let stat = JObject::new(cx.clone())?;
         stat.set("filetype", fd_stat.filetype)?;
         let filetype: &str = FileType(fd_stat.filetype).into();

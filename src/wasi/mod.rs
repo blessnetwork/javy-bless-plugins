@@ -85,6 +85,7 @@ pub fn wasi_preview1_fd_prestat_dir_name(args: Args<'_>) -> Result<Value<'_>> {
 }
 
 #[derive(Default, Debug)]
+#[repr(C)]
 pub struct Filestat {
     pub device_id: u64,
     pub inode: u64,
