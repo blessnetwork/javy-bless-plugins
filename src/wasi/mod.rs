@@ -1,6 +1,6 @@
 
 use javy_plugin_api::javy::{
-    quickjs::{Object as JObject, Value}, 
+    quickjs::{Ctx, Object as JObject, Value}, 
     Args
 };
 use anyhow::{anyhow, bail, Result};
@@ -16,6 +16,7 @@ mod symlink;
 mod link;
 mod rename;
 mod stat;
+mod descriptor;
 pub(crate) use open::wasi_preview1_open;
 pub(crate) use mkdir::wasi_preview1_path_create_directory;
 pub(crate) use rmdir::wasi_preview1_path_remove_directory;
@@ -29,7 +30,8 @@ pub use error::WasiError;
 
 
 #[inline]
-pub fn process_error(obj: &JObject, rs: i32) -> Result<()> {
+pub fn process_error(ctx: Ctx<'_>, rs: i32) -> Result<()> {
+    let obj = JObject::new(ctx.clone())?;
     let error_messgae = if rs != 0 {
         let error: WasiError = rs.into();
         error.to_string()
@@ -38,6 +40,7 @@ pub fn process_error(obj: &JObject, rs: i32) -> Result<()> {
     };
     obj.set("errno", rs)?;
     obj.set("error", error_messgae)?;
+    ctx.globals().set("lastErr", obj)?;
     Ok(())
 }
 
@@ -63,9 +66,9 @@ pub fn wasi_preview1_fd_prestat_dir_name(args: Args<'_>) -> Result<Value<'_>> {
     let rs = unsafe { preview_1::fd_prestat_get(fd, path_len_ptr) };
     let path_len_buf: [u8; 4] = path_len_buf[4..].try_into()?;
     let path_len = i32::from_le_bytes(path_len_buf);
-    let obj = JObject::new(cx)?;
+    let obj = JObject::new(cx.clone())?;
     if rs != 0  {
-        process_error(&obj, rs)?;
+        process_error(cx.clone(), rs)?;
         return Ok(Value::from_object(obj))
     }
     let mut path_buf = vec![0u8; path_len as usize];
@@ -80,7 +83,8 @@ pub fn wasi_preview1_fd_prestat_dir_name(args: Args<'_>) -> Result<Value<'_>> {
         let path = String::from_utf8(path_buf)?;
         obj.set("dir_name", path)?;
     }
-    process_error(&obj, rs)?;
+    obj.set("code", rs)?;
+    process_error(cx.clone(), rs)?;
     Ok(Value::from_object(obj))
 }
 

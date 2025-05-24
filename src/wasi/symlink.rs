@@ -39,8 +39,11 @@ pub fn wasi_preview1_path_symlink(args: Args<'_>) -> Result<Value<'_>> {
     let old_path_len = old_path.len() as i32;
     let new_path_ptr = new_path.as_ptr() as i32;
     let new_path_len = new_path.len() as i32;
-    let obj = JObject::new(cx)?;
-    let rs = unsafe { preview_1::path_symlink(old_path_ptr, old_path_len, dirfd, new_path_ptr, new_path_len) };
-    process_error(&obj, rs)?;
-    Ok(Value::from_object(obj))
+    let rs = unsafe { preview_1::path_symlink(
+        old_path_ptr, old_path_len, 
+        dirfd, 
+        new_path_ptr, new_path_len
+    )};
+    process_error(cx.clone(), rs)?;
+    Ok(Value::new_null(cx.clone()))
 }

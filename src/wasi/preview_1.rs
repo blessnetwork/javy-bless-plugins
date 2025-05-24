@@ -55,6 +55,14 @@ unsafe extern "C" {
         path_len: i32,
     ) -> i32;
 
+    #[link_name = "fd_read"]
+    pub unsafe fn fd_read(
+        fd: i32,
+        iovec_slice: i32,
+        iovec_len: i32,
+        readn_ptr: i32,
+    ) -> i32;
+
     #[link_name = "fd_prestat_dir_name"]
     pub unsafe fn fd_prestat_dir_name(
         fd: i32,

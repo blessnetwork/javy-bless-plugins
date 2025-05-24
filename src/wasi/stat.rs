@@ -51,7 +51,9 @@ pub fn wasi_preview1_path_filestat_get(args: Args<'_>) -> Result<Value<'_>> {
         stat.set("modification_time", fd_stat.mtim)?;
         stat.set("creation_time", fd_stat.ctim)?;
         rs_obj.set("stat", stat)?;
+        Ok(Value::from_object(rs_obj))
+    } else {
+        process_error(cx.clone(), rs)?;
+        Ok(Value::new_null(cx.clone()))
     }
-    process_error(&rs_obj, rs)?;
-    Ok(Value::from_object(rs_obj))
 }

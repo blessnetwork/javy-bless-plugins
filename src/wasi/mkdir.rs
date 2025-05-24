@@ -31,7 +31,6 @@ pub fn wasi_preview1_path_create_directory(args: Args<'_>) -> Result<Value<'_>> 
     let path_ptr = path.as_ptr() as i32;
     let path_len = path.len() as i32;
     let rs = unsafe { preview_1::path_create_directory(dirfd, path_ptr, path_len) };
-    let rs_obj = JObject::new(cx.clone())?;
-    process_error(&rs_obj, rs)?;
-    Ok(Value::from_object(rs_obj))
+    process_error(cx.clone(), rs)?;
+    Ok(Value::new_int(cx.clone(), rs))
 }

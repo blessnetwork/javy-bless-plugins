@@ -6,6 +6,7 @@
         errno: 0,
         error: "",
     }
+    globalThis.lastErr = lastErr;
     // Get a reference to the function before we delete it from `globalThis`.
     const __javy_wasi_preview1_open = globalThis.__javy_wasi_preview1_open;
     const __javy_wasi_preview1_fd_prestat_dir_name = globalThis.__javy_wasi_preview1_fd_prestat_dir_name;
@@ -116,7 +117,7 @@
         path = path.substring(dirpath.length, path.length);
         let fd_rights_inherited = fd_rights;
         let fd_flags = 0;
-        const {errno, fd, error} = __javy_wasi_preview1_open(
+        const file = __javy_wasi_preview1_open(
             dirfd,
             fd_lookup_flags,
             path,
@@ -125,11 +126,7 @@
             fd_rights_inherited,
             fd_flags,
         )
-        lastErr = {errno, error}
-        if (errno != 0) {
-            return 
-        }
-        return fd;
+        return file;
     }
 
     // This function is used to create a new directory with the specified path.
@@ -146,8 +143,8 @@
         }
         const {dirpath, dirfd} = dirpathObj;
         path = path.substring(dirpath.length, path.length);
-        lastErr = __javy_wasi_preview1_path_create_directory(dirfd, path)
-        if (lastErr.errno != 0) {
+        let rs = __javy_wasi_preview1_path_create_directory(dirfd, path)
+        if (rs != 0) {
             return false;
         }
         return true;
@@ -167,8 +164,8 @@
         }
         const {dirpath, dirfd} = dirpathObj;
         path = path.substring(dirpath.length, path.length);
-        lastErr = __javy_wasi_preview1_path_remove_directory(dirfd, path)
-        if (lastErr.errno != 0) {
+        let rs = __javy_wasi_preview1_path_remove_directory(dirfd, path)
+        if (rs != 0) {
             return false;
         }
         return true;
@@ -188,8 +185,8 @@
         }
         const {dirpath, dirfd} = dirpathObj;
         path = path.substring(dirpath.length, path.length);
-        lastErr = __javy_wasi_preview1_path_unlink_file(dirfd, path)
-        if (lastErr.errno != 0) {
+        let rs = __javy_wasi_preview1_path_unlink_file(dirfd, path)
+        if (rs != 0) {
             return false;
         }
         return true;
@@ -209,8 +206,8 @@
         }
         const {dirpath, dirfd} = dirpathObj;
         newpath = newpath.substring(dirpath.length, newpath.length);
-        lastErr = __javy_wasi_preview1_path_symlink(oldpath, dirfd, newpath)
-        if (lastErr.errno != 0) {
+        let rs = __javy_wasi_preview1_path_symlink(oldpath, dirfd, newpath)
+        if (rs != 0) {
             return false;
         }
         return true;
@@ -239,8 +236,8 @@
         const new_dirfd = new_dirpath_rs.dirfd;
         newpath = newpath.substring(new_dirpath.length, newpath.length);
         oldpath = oldpath.substring(old_dirpath.length, oldpath.length);
-        lastErr = __javy_wasi_preview1_path_link(old_dirfd, 0, oldpath, new_dirfd, newpath);
-        if (lastErr.errno != 0) {
+        let rs = __javy_wasi_preview1_path_link(old_dirfd, 0, oldpath, new_dirfd, newpath);
+        if (rs != 0) {
             return false;
         }
         return true;
@@ -268,8 +265,8 @@
         const new_dirfd = new_dirpath_rs.dirfd;
         newpath = newpath.substring(new_dirpath.length, newpath.length);
         oldpath = oldpath.substring(old_dirpath.length, oldpath.length);
-        lastErr = __javy_wasi_preview1_path_rename(old_dirfd, oldpath, new_dirfd, newpath);
-        if (lastErr.errno != 0) {
+        let rs = __javy_wasi_preview1_path_rename(old_dirfd, oldpath, new_dirfd, newpath);
+        if (rs != 0) {
             return false;
         }
         return true;
@@ -291,11 +288,7 @@
         const dirfd = dirpath_rs.dirfd;
         
         path = path.substring(dirpath.length, path.length);
-        let {errno, error, stat} = __javy_wasi_preview1_path_filestat_get(dirfd, Lookupflags.SYMLINK_FOLLOW, path);
-        if (errno != 0) {
-            lastErr = {errno, error};
-            return null;
-        }
+        let stat = __javy_wasi_preview1_path_filestat_get(dirfd, Lookupflags.SYMLINK_FOLLOW, path);
         return stat;
     }
 
@@ -303,7 +296,7 @@
     // It recursively calls itself with an incremented file descriptor until it finds a valid directory name.
     function dirfdForPath(path, fd = 3) {
         let rs = __javy_wasi_preview1_fd_prestat_dir_name(fd);
-        if (rs.errno == 0) {
+        if (rs.code == 0) {
             if (path.startsWith(rs.dir_name)) {
                 rs.fd = fd;
                 return {dirpath: rs.dir_name, dirfd: fd};
@@ -311,7 +304,6 @@
                 return dirfdForPath(path, fd + 1);
             }
         } else {
-            lastErr = rs
             return null;
         }
     }
@@ -326,8 +318,8 @@
             link,
             rename,
             stat,
-            errno: () => lastErr.errno,
-            error: () => lastErr.error,
+            errno: () => globalThis.lastErr.errno,
+            error: () => globalThis.lastErr.error,
         };
     }();
 
@@ -338,4 +330,7 @@
     Reflect.deleteProperty(globalThis, "__javy_wasi_preview1_path_remove_directory");
     Reflect.deleteProperty(globalThis, "__javy_wasi_preview1_path_unlink_file");
     Reflect.deleteProperty(globalThis, "__javy_wasi_preview1_path_symlink");
+    Reflect.deleteProperty(globalThis, "__javy_wasi_preview1_path_link");
+    Reflect.deleteProperty(globalThis, "__javy_wasi_preview1_path_rename");
+    Reflect.deleteProperty(globalThis, "__javy_wasi_preview1_path_filestat_get");
 })();

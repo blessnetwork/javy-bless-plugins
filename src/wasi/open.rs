@@ -1,9 +1,10 @@
 use javy_plugin_api::javy::{
-    quickjs::{Object as JObject, Value}, 
+    quickjs::Value, 
     Args
 };
 use anyhow::{anyhow, bail, Result};
 
+use super::descriptor::Descriptor;
 use super::{preview_1, process_error};
 
 /// This function is used to open a file at the given path.
@@ -74,9 +75,12 @@ pub fn wasi_preview1_open<'a>(args: Args<'a>) -> Result<Value<'a>> {
         fdflags, 
         opened_fd_ptr)
     };
-
-    let rs_obj = JObject::new(cx.clone())?;
-    rs_obj.set("fd", opened_fd)?;
-    process_error(&rs_obj, rs)?;
-    Ok(Value::from_object(rs_obj))
+    if rs == 0 {
+        Ok(Descriptor::new(cx.clone(), opened_fd)?)
+    } else {
+        process_error(cx.clone(), rs)?;
+        Ok(Value::new_null(cx.clone()))
+    }
+    
+    
 }
