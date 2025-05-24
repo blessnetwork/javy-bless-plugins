@@ -1,5 +1,5 @@
 use javy_plugin_api::javy::{
-    quickjs::{Object as JObject, Value}, 
+    quickjs::Value, 
     Args
 };
 use anyhow::{anyhow, bail, Result};
