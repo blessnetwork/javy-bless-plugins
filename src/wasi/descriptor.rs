@@ -10,8 +10,6 @@ use super::{preview_1, process_error};
 
 pub struct Descriptor {
     fd: i32,
-    errno: i32,
-    error: Option<String>,
 }
 
 pub struct Iovec {
@@ -23,63 +21,41 @@ impl Descriptor {
     pub fn new<'js>(cx: Ctx<'js>, fd: i32) -> Result<Value<'js>> {
         let descriptor = Arc::new(Descriptor {
             fd,
-            errno: 0,
-            error: None,
         });
         let desc = JObject::new(cx.clone())?;
         desc.set("fd", fd)?;
+        macro_rules! bind_method {
+            ($name:ident) => {
+                let descriptor_clone = descriptor.clone();
+                desc.set(stringify!($name), Function::new(
+                    cx.clone(),
+                    MutFn::new(move |cx: Ctx<'js>, args: Rest<Value<'js>>| {
+                        descriptor_clone.clone().$name(cx.clone(), args)
+                            .map_err(|e| to_js_error(cx.clone(), e))
+                    }),
+                )?)?;
+            };
+        }
         // Set the read method
-        let descriptor_clone = descriptor.clone();
-        desc.set("read", Function::new(
-            cx.clone(),
-            MutFn::new(move |cx: Ctx<'js>, args: Rest<Value<'js>>| {
-                descriptor_clone.clone().read(cx.clone(), args)
-                    .map_err(|e| to_js_error(cx.clone(), e))
-            }),
-        )?)?;
+        bind_method!(read);
         // Set the write method
-        let descriptor_clone = descriptor.clone();
-        desc.set("write", Function::new(
-            cx.clone(),
-            MutFn::new(move |cx: Ctx<'js>, args: Rest<Value<'js>>| {
-                descriptor_clone.clone().write(cx.clone(), args)
-                    .map_err(|e| to_js_error(cx.clone(), e))
-            }),
-        )?)?;
+        bind_method!(write);
         // Set the close method
-        let descriptor_clone = descriptor.clone();
-        desc.set("close", Function::new(
-            cx.clone(),
-            MutFn::new(move |cx: Ctx<'js>, args: Rest<Value<'js>>| {
-                descriptor_clone.clone().close(cx.clone(), args)
-                    .map_err(|e| to_js_error(cx.clone(), e))
-            }),
-        )?)?;
-
+        bind_method!(close);
+        // Set the fsync method
+        bind_method!(fsync);
+        // Set the fdatsync method
+        bind_method!(fdatasync);
         // Set the seek method
-        let descriptor_clone = descriptor.clone();
-        desc.set("seek", Function::new(
-            cx.clone(),
-            MutFn::new(move |cx: Ctx<'js>, args: Rest<Value<'js>>| {
-                descriptor_clone.clone().seek(cx.clone(), args)
-                    .map_err(|e| to_js_error(cx.clone(), e))
-            }),
-        )?)?;
-
+        bind_method!(seek);
         // Set the advise method
-        let descriptor_clone = descriptor.clone();
-        desc.set("advise", Function::new(
-            cx.clone(),
-            MutFn::new(move |cx: Ctx<'js>, args: Rest<Value<'js>>| {
-                descriptor_clone.clone().advise(cx.clone(), args)
-                    .map_err(|e| to_js_error(cx.clone(), e))
-            }),
-        )?)?;
+        bind_method!(advise);
         Ok(Value::from_object(desc))
     }
 
     /// The read method
-    /// # Arguments
+    /// Uint8Array as the buffer the first parameter
+    /// size as the second parameter, it's optional, default is the length of the buffer
     fn read<'js>(self: Arc<Self>, cx: Ctx<'js>, args: Rest<Value<'js>>) -> Result<Value<'js>> {
         if args.0.len() < 1 {
             bail!(
@@ -200,22 +176,8 @@ impl Descriptor {
                 args.len()
             );
         };
-        let offset: u64 = if offset.is_int() {
-            offset.as_int().ok_or_else(|| anyhow!("offset must be a int"))? as _
-        } else {
-            offset.as_big_int()
-                .map(|o| o.clone())
-                .ok_or_else(|| anyhow!("offset must be a int"))?
-                .to_i64()? as _
-        };
-        let len: u64 = if len.is_int() {
-            len.as_int().ok_or_else(|| anyhow!("len must be a int"))? as _
-        } else {
-            len.as_big_int()
-                .map(|o| o.clone())
-                .ok_or_else(|| anyhow!("len must be a int"))?
-                .to_i64()? as _
-        };
+        let offset: u64 = jsvalue2int64!(offset);
+        let len: u64 = jsvalue2int64!(len);
         let advice: i32 = advice.as_int().ok_or_else(|| anyhow!("advice must be a int"))?;
         let rs = unsafe {
             preview_1::fd_advise(
@@ -241,14 +203,7 @@ impl Descriptor {
                 args.len()
             );
         };
-        let offset: u64 = if offset.is_int() {
-            offset.as_int().ok_or_else(|| anyhow!("offset must be a int"))? as _
-        } else {
-            offset.as_big_int()
-                .map(|o| o.clone())
-                .ok_or_else(|| anyhow!("offset must be a int"))?
-                .to_i64()? as _
-        };
+        let offset: u64 = jsvalue2int64!(offset);
         
         let whence: i32 = whence.as_int().ok_or_else(|| anyhow!("advice must be a int"))?;
         let mut fsize: i64 = 0;
@@ -271,6 +226,30 @@ impl Descriptor {
     fn close<'js>(self: Arc<Self>, cx: Ctx<'js>, _: Rest<Value<'js>>) -> Result<Value<'js>> {
         let rs = unsafe {
             preview_1::fd_close(
+                self.fd
+            )
+        };
+        process_error(cx.clone(), rs)?;
+        Ok(Value::new_int(cx, rs))
+    }
+
+    /// The fsync method
+    /// Wait for the data and metadata to be written
+    fn fsync<'js>(self: Arc<Self>, cx: Ctx<'js>, _: Rest<Value<'js>>) -> Result<Value<'js>> {
+        let rs = unsafe {
+            preview_1::fd_sync(
+                self.fd
+            )
+        };
+        process_error(cx.clone(), rs)?;
+        Ok(Value::new_int(cx, rs))
+    }
+
+    /// The fdatasync method
+    /// Wait for the data to be written
+    fn fdatasync<'js>(self: Arc<Self>, cx: Ctx<'js>, _: Rest<Value<'js>>) -> Result<Value<'js>> {
+        let rs = unsafe {
+            preview_1::fd_datasync(
                 self.fd
             )
         };

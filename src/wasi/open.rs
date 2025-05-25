@@ -34,26 +34,8 @@ pub fn wasi_preview1_open<'a>(args: Args<'a>) -> Result<Value<'a>> {
         .ok_or_else(|| anyhow!("fd_lookup_flags must be a number"))?;
     let oflags = fd_oflags.as_int()
         .ok_or_else(|| anyhow!("oflags must be a number"))?;
-    let fs_rights_base = if fd_rights.is_int() {
-        fd_rights.as_int()
-            .map(|i| i as i64)
-            .ok_or_else(|| anyhow!("fd_rights must be a number"))?
-    } else {
-        fd_rights.as_big_int()
-            .map(|x| x.clone())
-            .ok_or_else(|| anyhow!("fd_rights must be a number"))?
-            .to_i64()?
-    };
-    let fd_rights_inherited = if fd_rights_inherited.is_int() {
-        fd_rights_inherited.as_int()
-            .map(|i| i as i64)
-            .ok_or_else(|| anyhow!("fd_rights_inherited must be a number"))?
-    } else {
-        fd_rights_inherited.as_big_int()
-            .map(|x| x.clone())
-            .ok_or_else(|| anyhow!("fd_rights_inherited must be a number"))?
-            .to_i64()?
-    };
+    let fs_rights_base = jsvalue2int64!(fd_rights);
+    let fd_rights_inherited = jsvalue2int64!(fd_rights_inherited);
     let fdflags = fd_flags.as_int()
         .ok_or_else(|| anyhow!("fdflags must be a number"))?;
     let opened_fd_ptr = (&mut opened_fd as *mut i32) as i32;

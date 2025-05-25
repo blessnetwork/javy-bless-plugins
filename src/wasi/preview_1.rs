@@ -49,6 +49,16 @@ unsafe extern "C" {
        fd: i32,
    ) -> i32;
 
+   #[link_name = "fd_sync"]
+    pub unsafe fn fd_sync(
+       fd: i32,
+   ) -> i32;
+
+   #[link_name = "fd_datasync"]
+    pub unsafe fn fd_datasync(
+       fd: i32,
+   ) -> i32;
+
     #[link_name = "fd_prestat_get"]
     pub unsafe fn fd_prestat_get(
         fd: i32,
@@ -116,7 +126,7 @@ unsafe extern "C" {
         advice: i32,
     ) -> i32;
 
-     #[link_name = "fd_seek"]
+    #[link_name = "fd_seek"]
     pub unsafe fn fd_seek(
         fd: i32,
         offset: u64,
@@ -124,5 +134,11 @@ unsafe extern "C" {
         fsize: i32,
     ) -> i32;
 
+    #[link_name = "fd_allocate"]
+    pub unsafe fn fd_allocate(
+        fd: i32,
+        offset: u64,
+        len: u64,
+    ) -> i32;
     
 }

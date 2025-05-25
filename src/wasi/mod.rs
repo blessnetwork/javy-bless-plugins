@@ -1,10 +1,11 @@
-
 use javy_plugin_api::javy::{
     quickjs::{Ctx, Object as JObject, Value}, 
     Args
 };
 use anyhow::{anyhow, bail, Result};
 
+#[macro_use]
+mod macros;
 mod preview_1;
 mod error;
 mod open;
@@ -118,3 +119,4 @@ impl Into<&str> for FileType {
         }
     }
 }
+
