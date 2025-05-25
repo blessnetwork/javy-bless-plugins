@@ -99,8 +99,6 @@ unsafe extern "C" {
         new_path_len: i32,
     ) -> i32;
 
-    
-
     #[link_name = "path_filestat_get"]
     pub unsafe fn path_filestat_get(
         dirfd: i32,
@@ -109,4 +107,22 @@ unsafe extern "C" {
         path_len: i32,
         stat_ptr: i32,
     ) -> i32;
+
+    #[link_name = "fd_advise"]
+    pub unsafe fn fd_advise(
+        fd: i32,
+        offset: u64,
+        len: u64,
+        advice: i32,
+    ) -> i32;
+
+     #[link_name = "fd_seek"]
+    pub unsafe fn fd_seek(
+        fd: i32,
+        offset: u64,
+        whence: i32,
+        fsize: i32,
+    ) -> i32;
+
+    
 }

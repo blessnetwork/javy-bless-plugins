@@ -52,6 +52,20 @@
         SOCK_ACCEPT: 0x20000000,
     }
 
+    const Advise = {
+        Normal: 0x0,
+        Sequential: 0x1,
+        Random: 0x2,
+        Willneed: 0x3,
+        Dontneed: 0x4,
+    }
+
+    const Whence = {
+        SeekSet: 0x0,
+        SeekCur: 0x1,
+        SeekEnd: 0x2,
+    }
+
     const Lookupflags = {
         SYMLINK_FOLLOW: 0x1,
     }
@@ -318,6 +332,8 @@
             link,
             rename,
             stat,
+            Advise,
+            Whence,
             errno: () => globalThis.lastErr.errno,
             error: () => globalThis.lastErr.error,
         };

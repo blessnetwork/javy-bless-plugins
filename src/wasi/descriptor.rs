@@ -51,7 +51,27 @@ impl Descriptor {
         desc.set("close", Function::new(
             cx.clone(),
             MutFn::new(move |cx: Ctx<'js>, args: Rest<Value<'js>>| {
-                descriptor_clone.clone().write(cx.clone(), args)
+                descriptor_clone.clone().close(cx.clone(), args)
+                    .map_err(|e| to_js_error(cx.clone(), e))
+            }),
+        )?)?;
+
+        // Set the seek method
+        let descriptor_clone = descriptor.clone();
+        desc.set("seek", Function::new(
+            cx.clone(),
+            MutFn::new(move |cx: Ctx<'js>, args: Rest<Value<'js>>| {
+                descriptor_clone.clone().seek(cx.clone(), args)
+                    .map_err(|e| to_js_error(cx.clone(), e))
+            }),
+        )?)?;
+
+        // Set the advise method
+        let descriptor_clone = descriptor.clone();
+        desc.set("advise", Function::new(
+            cx.clone(),
+            MutFn::new(move |cx: Ctx<'js>, args: Rest<Value<'js>>| {
+                descriptor_clone.clone().advise(cx.clone(), args)
                     .map_err(|e| to_js_error(cx.clone(), e))
             }),
         )?)?;
@@ -165,6 +185,84 @@ impl Descriptor {
             writen = -rs;
         }
         Ok(Value::new_int(cx, writen))
+    }
+
+    fn advise<'js>(self: Arc<Self>, cx: Ctx<'js>, args: Rest<Value<'js>>) -> Result<Value<'js>> {
+        let args_pat: &[Value<'_>]= &args.0;
+        let [
+            offset,
+            len,
+            advice,
+            ..
+        ] =  args_pat else {
+            bail!(
+                "advice expects 3 parameters: the offset, len and advice, Got: {} parameters.",
+                args.len()
+            );
+        };
+        let offset: u64 = if offset.is_int() {
+            offset.as_int().ok_or_else(|| anyhow!("offset must be a int"))? as _
+        } else {
+            offset.as_big_int()
+                .map(|o| o.clone())
+                .ok_or_else(|| anyhow!("offset must be a int"))?
+                .to_i64()? as _
+        };
+        let len: u64 = if len.is_int() {
+            len.as_int().ok_or_else(|| anyhow!("len must be a int"))? as _
+        } else {
+            len.as_big_int()
+                .map(|o| o.clone())
+                .ok_or_else(|| anyhow!("len must be a int"))?
+                .to_i64()? as _
+        };
+        let advice: i32 = advice.as_int().ok_or_else(|| anyhow!("advice must be a int"))?;
+        let rs = unsafe {
+            preview_1::fd_advise(
+                self.fd,
+                offset,
+                len,
+                advice
+            )
+        };
+        process_error(cx.clone(), rs)?;
+        Ok(Value::new_int(cx, rs))
+    }
+
+    fn seek<'js>(self: Arc<Self>, cx: Ctx<'js>, args: Rest<Value<'js>>) -> Result<Value<'js>> {
+        let args_pat: &[Value<'_>]= &args.0;
+        let [
+            offset,
+            whence,
+            ..
+        ] =  args_pat else {
+            bail!(
+                "advice expects 2 parameters: the offset and whence, Got: {} parameters.",
+                args.len()
+            );
+        };
+        let offset: u64 = if offset.is_int() {
+            offset.as_int().ok_or_else(|| anyhow!("offset must be a int"))? as _
+        } else {
+            offset.as_big_int()
+                .map(|o| o.clone())
+                .ok_or_else(|| anyhow!("offset must be a int"))?
+                .to_i64()? as _
+        };
+        
+        let whence: i32 = whence.as_int().ok_or_else(|| anyhow!("advice must be a int"))?;
+        let mut fsize: i64 = 0;
+        let fsize_ptr: i32 = &mut fsize as *mut i64 as i32;
+        let rs = unsafe {
+            preview_1::fd_seek(
+                self.fd,
+                offset,
+                whence,
+                fsize_ptr
+            )
+        };
+        process_error(cx.clone(), rs)?;
+        Ok(Value::new_int(cx, rs))
     }
 
     /// The close method
