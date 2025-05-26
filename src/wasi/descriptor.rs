@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use javy_plugin_api::javy::{
     quickjs::{
-        prelude::{MutFn, Rest}, Ctx, Function, Object as JObject, TypedArray, Value
+        prelude::{MutFn, Rest}, BigInt, Ctx, Function, Object as JObject, TypedArray, Value
     }, to_js_error
 };
 use anyhow::{anyhow, bail, Ok, Result};
@@ -58,6 +58,8 @@ impl Descriptor {
         bind_method!(ftruncate);
         // Set the allocate method
         bind_method!(allocate);
+        // Set the tell method
+        bind_method!(tell);
         Ok(Value::from_object(desc))
     }
 
@@ -366,5 +368,22 @@ impl Descriptor {
         process_error(cx.clone(), rs)?;
         Ok(Value::new_int(cx, rs))
     }
+
+    /// The tell method
+    /// This method is used to get the current position of the file descriptor.
+    ///  It returns a BigInt representing the current position in the file.
+    fn tell<'js>(self: Arc<Self>, cx: Ctx<'js>, _: Rest<Value<'js>>) -> Result<Value<'js>> {
+        let mut pos: u64 = 0;
+        let pos_ptr: i32 = &mut pos as *mut u64 as i32;
+        let rs = unsafe {
+            preview_1::fd_tell(
+                self.0,
+                pos_ptr
+            )
+        };
+        process_error(cx.clone(), rs)?;
+        Ok(Value::from_big_int(BigInt::from_u64(cx, pos)?))
+    }
+
 }
 
