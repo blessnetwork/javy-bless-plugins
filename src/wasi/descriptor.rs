@@ -12,6 +12,7 @@ pub struct Descriptor {
     fd: i32,
 }
 
+#[allow(dead_code)]
 pub struct Iovec {
     pub buf: i32,
     pub buf_len: u32,
@@ -52,6 +53,8 @@ impl Descriptor {
         bind_method!(advise);
         // Set the stat method
         bind_method!(stat);
+        // Set the ftruncate method
+        bind_method!(ftruncate);
         Ok(Value::from_object(desc))
     }
 
@@ -304,6 +307,31 @@ impl Descriptor {
             process_error(cx.clone(), rs)?;
             Ok(Value::new_null(cx.clone()))
         }
+    }
+
+    /// The ftruncate method
+    /// This method is used to truncate the file descriptor to the given length.
+    /// The first parameter is the length to truncate the file to.
+    fn ftruncate<'js>(self: Arc<Self>, cx: Ctx<'js>, args: Rest<Value<'js>>) -> Result<Value<'js>> {
+        let args_pat: &[Value<'_>]= &args.0;
+        let [
+            len,
+            ..
+        ] =  args_pat else {
+            bail!(
+                "ftruncate expects 1 parameters: the offset and whence, Got: {} parameters.",
+                args.len()
+            );
+        };
+        let len = jsvalue2int64!(len);
+        let rs = unsafe {
+            preview_1::fd_filestat_set_size(
+                self.fd,
+                len
+            )
+        };
+        process_error(cx.clone(), rs)?;
+        Ok(Value::new_int(cx, rs))
     }
 }
 

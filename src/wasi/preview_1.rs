@@ -146,5 +146,11 @@ unsafe extern "C" {
         fd: i32,
         stat_ptr: i32
     ) -> i32;
+
+    #[link_name = "fd_filestat_set_size"]
+    pub unsafe fn fd_filestat_set_size(
+        fd: i32,
+        stat_ptr: i32
+    ) -> i32;
     
 }
