@@ -24,7 +24,7 @@ impl Descriptor {
             fd,
         });
         let desc = JObject::new(cx.clone())?;
-        desc.set("fd", fd)?;
+        desc.set("rawfd", fd)?;
         macro_rules! bind_method {
             ($name:ident) => {
                 let descriptor_clone = descriptor.clone();
