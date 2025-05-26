@@ -6,7 +6,12 @@ use anyhow::{anyhow, bail, Result};
 
 use super::{preview_1, process_error};
 
-
+/// This function is used to link a file at the given path to a new path.
+/// It is used to rename a file from one path to another.
+/// - `old_dirfd`: The directory file descriptor of the old file.
+/// - `old_path`: The path of the old file.
+/// - `new_dirfd`: The directory file descriptor of the new file.
+/// - `new_path`: The path of the new file.
 pub fn wasi_preview1_path_rename(args: Args<'_>) -> Result<Value<'_>> {
     let (cx, args) = args.release();
     let args_pat: &[Value<'_>]= &args.0;

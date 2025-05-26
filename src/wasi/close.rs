@@ -7,6 +7,7 @@ use anyhow::{anyhow, bail, Result};
 use super::{preview_1, process_error};
 
 /// This function is used to close a file descriptor.
+/// `fd`: The file descriptor to close.
 pub fn wasi_preview1_close<'a>(args: Args<'a>) -> Result<Value<'a>> {
     let (cx, args) = args.release();
     let args_pat: &[Value<'_>]= &args.0;

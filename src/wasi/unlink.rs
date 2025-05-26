@@ -8,6 +8,8 @@ use super::{preview_1, process_error};
 
 
 /// Unlink a file at the given path.
+/// - `dirfd`: The directory file descriptor of the directory containing the file.
+/// - `path`: The path of the file to unlink.
 pub fn wasi_preview1_path_unlink_file(args: Args<'_>) -> Result<Value<'_>> {
     let (cx, args) = args.release();
     let args_pat: &[Value<'_>]= &args.0;

@@ -10,6 +10,8 @@ use super::{preview_1, process_error};
 /// Remove a directory at the given path.
 /// This function is used to remove a directory at the given path.
 /// It is used to remove a directory at the given path.
+/// - `old_dirfd`: The directory file descriptor of the old directory.
+/// - `path`: The path of the directory to remove.
 pub fn wasi_preview1_path_remove_directory(args: Args<'_>) -> Result<Value<'_>> {
     let (cx, args) = args.release();
     let args_pat: &[Value<'_>]= &args.0;

@@ -6,6 +6,11 @@ use anyhow::{anyhow, bail, Result};
 
 use super::{preview_1, process_error, FileType, Filestat};
 
+/// Get the file status of a file at the given path.
+/// This function is used to get the file status of a file at the given path.
+/// - `dirfd`: The directory file descriptor of the file.
+/// - `lookup_flags`: Flags for looking up the file descriptor.
+/// - `path`: The path of the file to get the status of.
 pub fn wasi_preview1_path_filestat_get(args: Args<'_>) -> Result<Value<'_>> {
     let (cx, args) = args.release();
     let args_pat: &[Value<'_>]= &args.0;
