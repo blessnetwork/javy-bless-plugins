@@ -6,7 +6,7 @@ use javy_plugin_api::javy::{
 };
 use anyhow::{anyhow, bail, Ok, Result};
 
-use super::{preview_1, process_error, stat::filestate_to_jsobject, Filestat};
+use super::{preview_1, process_error, stat::filestate_to_jsobject, Filestat, Fstflags};
 
 
 pub struct Descriptor(i32);
@@ -60,6 +60,8 @@ impl Descriptor {
         bind_method!(allocate);
         // Set the tell method
         bind_method!(tell);
+        // Set the touch method
+        bind_method!(touch);
         Ok(Value::from_object(desc))
     }
 
@@ -383,6 +385,21 @@ impl Descriptor {
         };
         process_error(cx.clone(), rs)?;
         Ok(Value::from_big_int(BigInt::from_u64(cx, pos)?))
+    }
+
+    /// The touch method
+    /// This method is used to update the access and modification times of the file descriptor.
+    fn touch<'js>(self: Arc<Self>, cx: Ctx<'js>, _args: Rest<Value<'js>>) -> Result<Value<'js>> {
+        let rs = unsafe {
+            preview_1::fd_filestat_set_times(
+                self.0,
+                0,
+                0,
+                Fstflags::AtmNow as u16|Fstflags::MtimNow as u16
+            )
+        };
+        process_error(cx.clone(), rs)?;
+        Ok(Value::new_int(cx, rs))
     }
 
 }

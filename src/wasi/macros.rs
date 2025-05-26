@@ -8,6 +8,6 @@ macro_rules! jsvalue2int64 {
                 .map(|o| o.clone())
                 .ok_or_else(|| anyhow!("{} must be a int", stringify!($i)))?
                 .to_i64()? as _
-        };
+        }
     };
 }

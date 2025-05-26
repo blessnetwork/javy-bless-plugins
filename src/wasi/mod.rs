@@ -120,3 +120,10 @@ impl Into<&str> for FileType {
     }
 }
 
+pub enum Fstflags {
+    Atm = 1 << 0,
+    AtmNow = 1 << 1,
+    Mtim = 1 << 2,
+    MtimNow = 1 << 3,
+}
+

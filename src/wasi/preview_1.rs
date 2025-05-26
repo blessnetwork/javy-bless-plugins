@@ -150,7 +150,21 @@ unsafe extern "C" {
     #[link_name = "fd_filestat_set_size"]
     pub unsafe fn fd_filestat_set_size(
         fd: i32,
-        stat_ptr: i32
+        stat: u64
+    ) -> i32;
+    
+    #[link_name = "fd_tell"]
+    pub unsafe fn fd_tell(
+        fd: i32,
+        pos_ptr: i32
+    ) -> i32;
+
+    #[link_name = "fd_filestat_set_times"]
+    pub unsafe fn fd_filestat_set_times(
+        fd: i32,
+        atim: i64,
+        mtim: i64,
+        fst_flags: u16,
     ) -> i32;
     
 }
