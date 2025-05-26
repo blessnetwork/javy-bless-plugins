@@ -55,6 +55,8 @@ impl Descriptor {
         bind_method!(stat);
         // Set the ftruncate method
         bind_method!(ftruncate);
+        // Set the allocate method
+        bind_method!(allocate);
         Ok(Value::from_object(desc))
     }
 
@@ -307,6 +309,36 @@ impl Descriptor {
             process_error(cx.clone(), rs)?;
             Ok(Value::new_null(cx.clone()))
         }
+    }
+
+    /// The allocate method
+    /// This method is used to allocate space in the file descriptor.
+    /// The first parameter is the offset, the second parameter is the length.
+    /// The offset is the number of bytes to offset from the beginning of the file,
+    /// and the length is the number of bytes to allocate.
+    fn allocate<'js>(self: Arc<Self>, cx: Ctx<'js>, args: Rest<Value<'js>>) -> Result<Value<'js>> {
+        let args_pat: &[Value<'_>]= &args.0;
+        let [
+            offset,
+            len,
+            ..
+        ] =  args_pat else {
+            bail!(
+                "allocate expects 2 parameters: the offset and length, Got: {} parameters.",
+                args.len()
+            );
+        };
+        let offset: u64 = jsvalue2int64!(offset);
+        let len: u64 = jsvalue2int64!(len);
+        let rs = unsafe {
+            preview_1::fd_allocate(
+                self.fd,
+                offset,
+                len
+            )
+        };
+        process_error(cx.clone(), rs)?;
+        Ok(Value::new_int(cx, rs))
     }
 
     /// The ftruncate method
