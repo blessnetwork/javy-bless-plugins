@@ -8,10 +8,10 @@ use anyhow::{anyhow, bail, Ok, Result};
 
 use super::{preview_1, process_error, stat::filestate_to_jsobject, Filestat};
 
-pub struct Descriptor {
-    fd: i32,
-}
 
+pub struct Descriptor(i32);
+
+/// This struct is used to represent an I/O vector.
 #[allow(dead_code)]
 pub struct Iovec {
     pub buf: i32,
@@ -19,10 +19,11 @@ pub struct Iovec {
 }
 
 impl Descriptor {
+    /// Create a new file descriptor object.
+    /// This function creates a new file descriptor object with the given file descriptor.
+    /// The file descriptor is used to perform operations on the file.
     pub fn new<'js>(cx: Ctx<'js>, fd: i32) -> Result<Value<'js>> {
-        let descriptor = Arc::new(Descriptor {
-            fd,
-        });
+        let descriptor = Arc::new(Descriptor(fd));
         let desc = JObject::new(cx.clone())?;
         desc.set("rawfd", fd)?;
         macro_rules! bind_method {
@@ -103,7 +104,7 @@ impl Descriptor {
         ];
         let rs = unsafe {
             preview_1::fd_read(
-                self.fd,
+                self.0,
                 ioslice.as_ptr() as i32,
                 ioslice.len() as i32,
                 readn_ptr)
@@ -158,7 +159,7 @@ impl Descriptor {
         ];
         let rs = unsafe {
             preview_1::fd_write(
-                self.fd,
+                self.0,
                 ioslice.as_ptr() as i32,
                 ioslice.len() as i32,
                 writen_ptr)
@@ -200,7 +201,7 @@ impl Descriptor {
         let advice: i32 = advice.as_int().ok_or_else(|| anyhow!("advice must be a int"))?;
         let rs = unsafe {
             preview_1::fd_advise(
-                self.fd,
+                self.0,
                 offset,
                 len,
                 advice
@@ -237,7 +238,7 @@ impl Descriptor {
         let fsize_ptr: i32 = &mut fsize as *mut i64 as i32;
         let rs = unsafe {
             preview_1::fd_seek(
-                self.fd,
+                self.0,
                 offset,
                 whence,
                 fsize_ptr
@@ -253,7 +254,7 @@ impl Descriptor {
     fn close<'js>(self: Arc<Self>, cx: Ctx<'js>, _: Rest<Value<'js>>) -> Result<Value<'js>> {
         let rs = unsafe {
             preview_1::fd_close(
-                self.fd
+                self.0
             )
         };
         process_error(cx.clone(), rs)?;
@@ -265,7 +266,7 @@ impl Descriptor {
     fn fsync<'js>(self: Arc<Self>, cx: Ctx<'js>, _: Rest<Value<'js>>) -> Result<Value<'js>> {
         let rs = unsafe {
             preview_1::fd_sync(
-                self.fd
+                self.0
             )
         };
         process_error(cx.clone(), rs)?;
@@ -277,7 +278,7 @@ impl Descriptor {
     fn fdatasync<'js>(self: Arc<Self>, cx: Ctx<'js>, _: Rest<Value<'js>>) -> Result<Value<'js>> {
         let rs = unsafe {
             preview_1::fd_datasync(
-                self.fd
+                self.0
             )
         };
         process_error(cx.clone(), rs)?;
@@ -298,7 +299,7 @@ impl Descriptor {
         let fd_stat_ptr = &mut fd_stat as *mut _ as i32;
         let rs = unsafe {
             preview_1::fd_filestat_get(
-                self.fd,
+                self.0,
                 fd_stat_ptr,
             )
         };
@@ -332,7 +333,7 @@ impl Descriptor {
         let len: u64 = jsvalue2int64!(len);
         let rs = unsafe {
             preview_1::fd_allocate(
-                self.fd,
+                self.0,
                 offset,
                 len
             )
@@ -358,7 +359,7 @@ impl Descriptor {
         let len = jsvalue2int64!(len);
         let rs = unsafe {
             preview_1::fd_filestat_set_size(
-                self.fd,
+                self.0,
                 len
             )
         };
