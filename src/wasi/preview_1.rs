@@ -140,5 +140,11 @@ unsafe extern "C" {
         offset: u64,
         len: u64,
     ) -> i32;
+
+    #[link_name = "fd_filestat_get"]
+    pub unsafe fn fd_filestat_get(
+        fd: i32,
+        stat_ptr: i32
+    ) -> i32;
     
 }

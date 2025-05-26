@@ -6,7 +6,7 @@ use javy_plugin_api::javy::{
 };
 use anyhow::{anyhow, bail, Ok, Result};
 
-use super::{preview_1, process_error};
+use super::{preview_1, process_error, stat::filestate_to_jsobject, Filestat};
 
 pub struct Descriptor {
     fd: i32,
@@ -50,6 +50,8 @@ impl Descriptor {
         bind_method!(seek);
         // Set the advise method
         bind_method!(advise);
+        // Set the stat method
+        bind_method!(stat);
         Ok(Value::from_object(desc))
     }
 
@@ -163,6 +165,18 @@ impl Descriptor {
         Ok(Value::new_int(cx, writen))
     }
 
+    /// The advise method
+    /// This method is used to give advice to the file descriptor.
+    /// The first parameter is the offset, the second parameter is the length,
+    /// and the third parameter is the advice.
+    /// The advice can be one of the following values:
+    /// - `0`: Normal access.
+    /// - `1`: Random access. 
+    /// - `2`: Sequential access.
+    /// - `3`: Will need to read the data.
+    /// - `4`: Will need to write the data.
+    /// The offset is the number of bytes to offset from the beginning of the file,
+    /// and the length is the number of bytes to advise.
     fn advise<'js>(self: Arc<Self>, cx: Ctx<'js>, args: Rest<Value<'js>>) -> Result<Value<'js>> {
         let args_pat: &[Value<'_>]= &args.0;
         let [
@@ -191,6 +205,14 @@ impl Descriptor {
         Ok(Value::new_int(cx, rs))
     }
 
+    /// The seek method
+    /// This method is used to change the current position of the file descriptor.
+    /// The first parameter is the offset, the second parameter is the whence.
+    /// The whence can be one of the following values:
+    /// - `0`: Seek from the beginning of the file.
+    /// - `1`: Seek from the current position of the file.
+    /// - `2`: Seek from the end of the file.
+    /// The offset is the number of bytes to seek.
     fn seek<'js>(self: Arc<Self>, cx: Ctx<'js>, args: Rest<Value<'js>>) -> Result<Value<'js>> {
         let args_pat: &[Value<'_>]= &args.0;
         let [
@@ -255,6 +277,33 @@ impl Descriptor {
         };
         process_error(cx.clone(), rs)?;
         Ok(Value::new_int(cx, rs))
+    }
+
+    /// The stat method
+    /// This method is used to get the file status of the file descriptor.
+    /// It returns a JavaScript object with the following properties:
+    /// - `filetype`: The type of the file.
+    /// - `filetype_desc`: The description of the file type.
+    /// - `filesize`: The size of the file in bytes.
+    /// - `atime`: The last access time of the file.
+    /// - `mtime`: The last modification time of the file.
+    /// - `ctime`: The last change time of the file.
+    fn stat<'js>(self: Arc<Self>, cx: Ctx<'js>, _: Rest<Value<'js>>) -> Result<Value<'js>> {
+        let mut fd_stat: Filestat = Default::default();
+        let fd_stat_ptr = &mut fd_stat as *mut _ as i32;
+        let rs = unsafe {
+            preview_1::fd_filestat_get(
+                self.fd,
+                fd_stat_ptr,
+            )
+        };
+        if rs == 0 {
+            let stat = filestate_to_jsobject(cx.clone(), &fd_stat)?;
+            Ok(Value::from_object(stat))
+        } else {
+            process_error(cx.clone(), rs)?;
+            Ok(Value::new_null(cx.clone()))
+        }
     }
 }
 

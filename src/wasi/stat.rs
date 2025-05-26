@@ -1,5 +1,5 @@
 use javy_plugin_api::javy::{
-    quickjs::{Object as JObject, Value}, 
+    quickjs::{Object as JObject, Value, Ctx}, 
     Args
 };
 use anyhow::{anyhow, bail, Result};
@@ -40,20 +40,26 @@ pub fn wasi_preview1_path_filestat_get(args: Args<'_>) -> Result<Value<'_>> {
             fd_stat_ptr,
         )
     };
-    let rs_obj = JObject::new(cx.clone())?;
     if rs == 0 {
-        let stat = JObject::new(cx.clone())?;
-        stat.set("filetype", fd_stat.filetype)?;
-        let filetype: &str = FileType(fd_stat.filetype).into();
-        stat.set("filetype_desc", filetype)?;
-        stat.set("filesize", fd_stat.size)?;
-        stat.set("access_time", fd_stat.atim)?;
-        stat.set("modification_time", fd_stat.mtim)?;
-        stat.set("creation_time", fd_stat.ctim)?;
-        rs_obj.set("stat", stat)?;
-        Ok(Value::from_object(rs_obj))
+        let stat = filestate_to_jsobject(cx.clone(), &fd_stat)?;
+        Ok(Value::from_object(stat))
     } else {
         process_error(cx.clone(), rs)?;
         Ok(Value::new_null(cx.clone()))
     }
+}
+
+pub fn filestate_to_jsobject<'js>(
+    cx: Ctx<'js>,
+    fd_stat: &Filestat,
+) -> Result<JObject<'js>> {
+    let stat = JObject::new(cx.clone())?;
+    stat.set("filetype", fd_stat.filetype)?;
+    let filetype: &str = FileType(fd_stat.filetype).into();
+    stat.set("filetype_desc", filetype)?;
+    stat.set("filesize", fd_stat.size)?;
+    stat.set("access_time", fd_stat.atim)?;
+    stat.set("modification_time", fd_stat.mtim)?;
+    stat.set("creation_time", fd_stat.ctim)?;
+    Ok(stat)
 }
