@@ -166,5 +166,11 @@ unsafe extern "C" {
         mtim: i64,
         fst_flags: u16,
     ) -> i32;
+
+    #[link_name = "fd_fdstat_set_flags"]
+    pub unsafe fn fd_fdstat_set_flags(
+        fd: i32,
+        fd_flags: u16,
+    ) -> i32;
     
 }

@@ -28,11 +28,14 @@ impl Descriptor {
         desc.set("rawfd", fd)?;
         macro_rules! bind_method {
             ($name:ident) => {
+                bind_method!(stringify!($name), $name);
+            };
+            ($name: expr, $method: ident) => {
                 let descriptor_clone = descriptor.clone();
-                desc.set(stringify!($name), Function::new(
+                desc.set($name, Function::new(
                     cx.clone(),
                     MutFn::new(move |cx: Ctx<'js>, args: Rest<Value<'js>>| {
-                        descriptor_clone.clone().$name(cx.clone(), args)
+                        descriptor_clone.clone().$method(cx.clone(), args)
                             .map_err(|e| to_js_error(cx.clone(), e))
                     }),
                 )?)?;
@@ -62,6 +65,8 @@ impl Descriptor {
         bind_method!(tell);
         // Set the touch method
         bind_method!(touch);
+        // Set the set_flags method
+        bind_method!("setFlags", set_flags);
         Ok(Value::from_object(desc))
     }
 
@@ -396,6 +401,30 @@ impl Descriptor {
                 0,
                 0,
                 Fstflags::AtmNow as u16|Fstflags::MtimNow as u16
+            )
+        };
+        process_error(cx.clone(), rs)?;
+        Ok(Value::new_int(cx, rs))
+    }
+
+    /// The fd_fdstat_set_flags method
+    /// This method is used to set the flags of the file descriptor.
+    fn set_flags<'js>(self: Arc<Self>, cx: Ctx<'js>, args: Rest<Value<'js>>) -> Result<Value<'js>> {
+        let args_pat: &[Value<'_>]= &args.0;
+        let [
+            flags,
+            ..
+        ] =  args_pat else {
+            bail!(
+                "set_flags expects 1 parameters: the fd_flags, Got: {} parameters.",
+                args.len()
+            );
+        };
+        let fd_flags = flags.as_int().ok_or_else(|| anyhow!("fd_flags must be a int"))?;
+        let rs = unsafe {
+            preview_1::fd_fdstat_set_flags(
+                self.0,
+                fd_flags as u16
             )
         };
         process_error(cx.clone(), rs)?;
