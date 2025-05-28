@@ -1,8 +1,5 @@
-use javy_plugin_api::javy::{
-    quickjs::Value, 
-    Args
-};
 use anyhow::{anyhow, bail, Result};
+use javy_plugin_api::javy::{quickjs::Value, Args};
 
 use super::{preview_1, process_error};
 
@@ -11,20 +8,18 @@ use super::{preview_1, process_error};
 /// The directory must not exist.
 pub fn wasi_preview1_path_create_directory(args: Args<'_>) -> Result<Value<'_>> {
     let (cx, args) = args.release();
-    let args_pat: &[Value<'_>]= &args.0;
-    let [
-        dirfd,
-        path,
-        ..
-    ] =  args_pat else {
+    let args_pat: &[Value<'_>] = &args.0;
+    let [dirfd, path, ..] = args_pat else {
         bail!(
             "path_create_directory expects 2 parameters: the dirfd and path, Got: {} parameters.",
             args.len()
         );
     };
-    let dirfd = dirfd.as_int()
+    let dirfd = dirfd
+        .as_int()
         .ok_or_else(|| anyhow!("dirfd must be a number"))?;
-    let path = path.as_string()
+    let path = path
+        .as_string()
         .ok_or_else(|| anyhow!("path must be a string"))?
         .to_string()
         .map_err(|_| anyhow!("invalid UTF-8 in path"))?;

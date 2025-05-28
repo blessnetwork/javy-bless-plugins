@@ -12,10 +12,10 @@ use javy_plugin_api::{
 pub mod crypto;
 #[cfg(feature = "fetch")]
 pub mod fetch;
-#[cfg(feature = "wasi")]
-pub mod wasi;
 #[cfg(feature = "llm")]
 pub mod llm;
+#[cfg(feature = "wasi")]
+pub mod wasi;
 
 #[cfg(feature = "crypto")]
 use crypto::bless_get_random_values;

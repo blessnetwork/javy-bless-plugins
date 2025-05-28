@@ -1,16 +1,15 @@
-use std::{sync::Arc, vec};
+use anyhow::{anyhow, bail, Ok, Result};
 use javy_plugin_api::javy::{
     quickjs::{
-        prelude::{MutFn, Rest}, Array, BigInt, Ctx, FromIteratorJs, 
-        Function, Object as JObject, String as JString, TypedArray, Value
-    }, to_js_error
+        prelude::{MutFn, Rest},
+        Array, BigInt, Ctx, FromIteratorJs, Function, Object as JObject, String as JString,
+        TypedArray, Value,
+    },
+    to_js_error,
 };
-use anyhow::{anyhow, bail, Ok, Result};
+use std::{sync::Arc, vec};
 
-use super::{
-    preview_1, process_error, stat::filestate_to_jsobject, Filestat, Fstflags
-};
-
+use super::{preview_1, process_error, stat::filestate_to_jsobject, Filestat, Fstflags};
 
 pub struct Descriptor(i32);
 
@@ -35,13 +34,18 @@ impl Descriptor {
             };
             ($name: expr, $method: ident) => {
                 let descriptor_clone = descriptor.clone();
-                desc.set($name, Function::new(
-                    cx.clone(),
-                    MutFn::new(move |cx: Ctx<'js>, args: Rest<Value<'js>>| {
-                        descriptor_clone.clone().$method(cx.clone(), args)
-                            .map_err(|e| to_js_error(cx.clone(), e))
-                    }),
-                )?)?;
+                desc.set(
+                    $name,
+                    Function::new(
+                        cx.clone(),
+                        MutFn::new(move |cx: Ctx<'js>, args: Rest<Value<'js>>| {
+                            descriptor_clone
+                                .clone()
+                                .$method(cx.clone(), args)
+                                .map_err(|e| to_js_error(cx.clone(), e))
+                        }),
+                    )?,
+                )?;
             };
         }
         // Set the read method
@@ -105,10 +109,10 @@ impl Descriptor {
                 process_error(cx.clone(), rs)?;
                 return Ok(Value::new_null(cx.clone()));
             }
-            
+
             if readn > 0 {
                 dir_buff.extend_from_slice(&r_buff[0..readn as usize]);
-            } 
+            }
             if readn < r_buff.len() as i64 {
                 break; // No more entries to read
             }
@@ -117,16 +121,13 @@ impl Descriptor {
         let mut name_jsarray = vec![];
         while off < dir_buff.len() {
             off += 16;
-            let len: i32 = unsafe {
-                *(dir_buff.as_ptr().wrapping_add(off) as *const i32)
-            };
+            let len: i32 = unsafe { *(dir_buff.as_ptr().wrapping_add(off) as *const i32) };
             off += 8; // Move past the length field
             if off + len as usize > dir_buff.len() {
                 return Ok(Value::new_null(cx.clone()));
             }
-            let name_str = unsafe {
-                std::str::from_utf8_unchecked(&dir_buff[off..off + len as usize])
-            };
+            let name_str =
+                unsafe { std::str::from_utf8_unchecked(&dir_buff[off..off + len as usize]) };
             off += len as usize; // Move past the name
             name_jsarray.push(Value::from_string(JString::from_str(cx.clone(), name_str)?));
         }
@@ -144,7 +145,7 @@ impl Descriptor {
                 args.len()
             );
         }
-        let buffer =  &args.0[0];
+        let buffer = &args.0[0];
         let null = Value::new_null(cx.clone());
         let mut size = &null;
         if args.0.len() > 2 {
@@ -153,11 +154,14 @@ impl Descriptor {
 
         let mut readn: i32 = 0;
         let readn_ptr: i32 = &mut readn as *mut i32 as i32;
-        let array = buffer.as_object()
+        let array = buffer
+            .as_object()
             .ok_or_else(|| anyhow!("buffer must be a array"))?;
-        let array: &TypedArray<'_, u8> = array.as_typed_array()
+        let array: &TypedArray<'_, u8> = array
+            .as_typed_array()
             .ok_or_else(|| anyhow!("buffer must be a typed array"))?;
-        let mut array_raw = array.as_raw()
+        let mut array_raw = array
+            .as_raw()
             .ok_or_else(|| anyhow!("buffer get raw ptr error."))?;
         let size = size.as_int();
         let size = if let Some(size) = size {
@@ -169,18 +173,17 @@ impl Descriptor {
         } else {
             array_raw.len as u32
         };
-        let ioslice = vec![
-            Iovec {
-                buf: unsafe {array_raw.ptr.as_mut() as *mut u8  as i32},
-                buf_len: size,
-            }
-        ];
+        let ioslice = vec![Iovec {
+            buf: unsafe { array_raw.ptr.as_mut() as *mut u8 as i32 },
+            buf_len: size,
+        }];
         let rs = unsafe {
             preview_1::fd_read(
                 self.0,
                 ioslice.as_ptr() as i32,
                 ioslice.len() as i32,
-                readn_ptr)
+                readn_ptr,
+            )
         };
         process_error(cx.clone(), rs)?;
         if rs != 0 {
@@ -199,7 +202,7 @@ impl Descriptor {
                 args.len()
             );
         }
-        let buffer =  &args.0[0];
+        let buffer = &args.0[0];
         let null = Value::new_null(cx.clone());
         let mut size = &null;
         if args.0.len() > 2 {
@@ -208,11 +211,14 @@ impl Descriptor {
 
         let mut writen: i32 = 0;
         let writen_ptr: i32 = &mut writen as *mut i32 as i32;
-        let array = buffer.as_object()
+        let array = buffer
+            .as_object()
             .ok_or_else(|| anyhow!("buffer must be a array"))?;
-        let array: &TypedArray<'_, u8> = array.as_typed_array()
+        let array: &TypedArray<'_, u8> = array
+            .as_typed_array()
             .ok_or_else(|| anyhow!("buffer must be a typed array"))?;
-        let mut array_raw = array.as_raw()
+        let mut array_raw = array
+            .as_raw()
             .ok_or_else(|| anyhow!("buffer get raw ptr error."))?;
         let size = size.as_int();
         let size = if let Some(size) = size {
@@ -224,18 +230,17 @@ impl Descriptor {
         } else {
             array_raw.len as u32
         };
-        let ioslice = vec![
-            Iovec {
-                buf: unsafe {array_raw.ptr.as_mut() as *mut u8  as i32},
-                buf_len: size,
-            }
-        ];
+        let ioslice = vec![Iovec {
+            buf: unsafe { array_raw.ptr.as_mut() as *mut u8 as i32 },
+            buf_len: size,
+        }];
         let rs = unsafe {
             preview_1::fd_write(
                 self.0,
                 ioslice.as_ptr() as i32,
                 ioslice.len() as i32,
-                writen_ptr)
+                writen_ptr,
+            )
         };
         process_error(cx.clone(), rs)?;
         if rs != 0 {
@@ -252,7 +257,7 @@ impl Descriptor {
         loop {
             let mut ioslice = vec![Iovec {
                 buf: buf.as_mut_ptr() as *const u8 as i32, // This will be set to the actual buffer later
-                buf_len: 1024*4, // Read in chunks of 1024*4 bytes
+                buf_len: 1024 * 4,                         // Read in chunks of 1024*4 bytes
             }];
             rs = unsafe {
                 preview_1::fd_read(
@@ -282,7 +287,11 @@ impl Descriptor {
 
     /// The read_string method
     /// This method reads all data from the file descriptor and returns it as a string.
-    fn read_string<'js>(self: Arc<Self>, cx: Ctx<'js>, _args: Rest<Value<'js>>) -> Result<Value<'js>> {
+    fn read_string<'js>(
+        self: Arc<Self>,
+        cx: Ctx<'js>,
+        _args: Rest<Value<'js>>,
+    ) -> Result<Value<'js>> {
         let data = Self::read_all_data(cx.clone(), self.0)?;
         let string: JString<'js> = JString::from_str(cx.clone(), &String::from_utf8(data)?)?;
         Ok(Value::from_string(string))
@@ -294,20 +303,15 @@ impl Descriptor {
     /// and the third parameter is the advice.
     /// The advice can be one of the following values:
     /// - `0`: Normal access.
-    /// - `1`: Random access. 
+    /// - `1`: Random access.
     /// - `2`: Sequential access.
     /// - `3`: Will need to read the data.
     /// - `4`: Will need to write the data.
     /// The offset is the number of bytes to offset from the beginning of the file,
     /// and the length is the number of bytes to advise.
     fn advise<'js>(self: Arc<Self>, cx: Ctx<'js>, args: Rest<Value<'js>>) -> Result<Value<'js>> {
-        let args_pat: &[Value<'_>]= &args.0;
-        let [
-            offset,
-            len,
-            advice,
-            ..
-        ] =  args_pat else {
+        let args_pat: &[Value<'_>] = &args.0;
+        let [offset, len, advice, ..] = args_pat else {
             bail!(
                 "advice expects 3 parameters: the offset, len and advice, Got: {} parameters.",
                 args.len()
@@ -315,15 +319,10 @@ impl Descriptor {
         };
         let offset: u64 = jsvalue2int64!(offset);
         let len: u64 = jsvalue2int64!(len);
-        let advice: i32 = advice.as_int().ok_or_else(|| anyhow!("advice must be a int"))?;
-        let rs = unsafe {
-            preview_1::fd_advise(
-                self.0,
-                offset,
-                len,
-                advice
-            )
-        };
+        let advice: i32 = advice
+            .as_int()
+            .ok_or_else(|| anyhow!("advice must be a int"))?;
+        let rs = unsafe { preview_1::fd_advise(self.0, offset, len, advice) };
         process_error(cx.clone(), rs)?;
         Ok(Value::new_int(cx, rs))
     }
@@ -337,30 +336,21 @@ impl Descriptor {
     /// - `2`: Seek from the end of the file.
     /// The offset is the number of bytes to seek.
     fn seek<'js>(self: Arc<Self>, cx: Ctx<'js>, args: Rest<Value<'js>>) -> Result<Value<'js>> {
-        let args_pat: &[Value<'_>]= &args.0;
-        let [
-            offset,
-            whence,
-            ..
-        ] =  args_pat else {
+        let args_pat: &[Value<'_>] = &args.0;
+        let [offset, whence, ..] = args_pat else {
             bail!(
                 "advice expects 2 parameters: the offset and whence, Got: {} parameters.",
                 args.len()
             );
         };
         let offset: u64 = jsvalue2int64!(offset);
-        
-        let whence: i32 = whence.as_int().ok_or_else(|| anyhow!("advice must be a int"))?;
+
+        let whence: i32 = whence
+            .as_int()
+            .ok_or_else(|| anyhow!("advice must be a int"))?;
         let mut fsize: i64 = 0;
         let fsize_ptr: i32 = &mut fsize as *mut i64 as i32;
-        let rs = unsafe {
-            preview_1::fd_seek(
-                self.0,
-                offset,
-                whence,
-                fsize_ptr
-            )
-        };
+        let rs = unsafe { preview_1::fd_seek(self.0, offset, whence, fsize_ptr) };
         process_error(cx.clone(), rs)?;
         Ok(Value::new_int(cx, rs))
     }
@@ -369,11 +359,7 @@ impl Descriptor {
     /// Uint8Array as the buffer the first parameter
     /// size as the second parameter, it's optional, default is the length of the buffer
     fn close<'js>(self: Arc<Self>, cx: Ctx<'js>, _: Rest<Value<'js>>) -> Result<Value<'js>> {
-        let rs = unsafe {
-            preview_1::fd_close(
-                self.0
-            )
-        };
+        let rs = unsafe { preview_1::fd_close(self.0) };
         process_error(cx.clone(), rs)?;
         Ok(Value::new_int(cx, rs))
     }
@@ -381,11 +367,7 @@ impl Descriptor {
     /// The fsync method
     /// Wait for the data and metadata to be written
     fn fsync<'js>(self: Arc<Self>, cx: Ctx<'js>, _: Rest<Value<'js>>) -> Result<Value<'js>> {
-        let rs = unsafe {
-            preview_1::fd_sync(
-                self.0
-            )
-        };
+        let rs = unsafe { preview_1::fd_sync(self.0) };
         process_error(cx.clone(), rs)?;
         Ok(Value::new_int(cx, rs))
     }
@@ -393,11 +375,7 @@ impl Descriptor {
     /// The fdatasync method
     /// Wait for the data to be written
     fn fdatasync<'js>(self: Arc<Self>, cx: Ctx<'js>, _: Rest<Value<'js>>) -> Result<Value<'js>> {
-        let rs = unsafe {
-            preview_1::fd_datasync(
-                self.0
-            )
-        };
+        let rs = unsafe { preview_1::fd_datasync(self.0) };
         process_error(cx.clone(), rs)?;
         Ok(Value::new_int(cx, rs))
     }
@@ -414,12 +392,7 @@ impl Descriptor {
     fn stat<'js>(self: Arc<Self>, cx: Ctx<'js>, _: Rest<Value<'js>>) -> Result<Value<'js>> {
         let mut fd_stat: Filestat = Default::default();
         let fd_stat_ptr = &mut fd_stat as *mut _ as i32;
-        let rs = unsafe {
-            preview_1::fd_filestat_get(
-                self.0,
-                fd_stat_ptr,
-            )
-        };
+        let rs = unsafe { preview_1::fd_filestat_get(self.0, fd_stat_ptr) };
         if rs == 0 {
             let stat = filestate_to_jsobject(cx.clone(), &fd_stat)?;
             Ok(Value::from_object(stat))
@@ -435,12 +408,8 @@ impl Descriptor {
     /// The offset is the number of bytes to offset from the beginning of the file,
     /// and the length is the number of bytes to allocate.
     fn allocate<'js>(self: Arc<Self>, cx: Ctx<'js>, args: Rest<Value<'js>>) -> Result<Value<'js>> {
-        let args_pat: &[Value<'_>]= &args.0;
-        let [
-            offset,
-            len,
-            ..
-        ] =  args_pat else {
+        let args_pat: &[Value<'_>] = &args.0;
+        let [offset, len, ..] = args_pat else {
             bail!(
                 "allocate expects 2 parameters: the offset and length, Got: {} parameters.",
                 args.len()
@@ -448,13 +417,7 @@ impl Descriptor {
         };
         let offset: u64 = jsvalue2int64!(offset);
         let len: u64 = jsvalue2int64!(len);
-        let rs = unsafe {
-            preview_1::fd_allocate(
-                self.0,
-                offset,
-                len
-            )
-        };
+        let rs = unsafe { preview_1::fd_allocate(self.0, offset, len) };
         process_error(cx.clone(), rs)?;
         Ok(Value::new_int(cx, rs))
     }
@@ -464,25 +427,15 @@ impl Descriptor {
     /// The first parameter is the timestamp to set the access time to.
     /// The timestamp is a BigInt representing the number of milliseconds since the epoch.
     fn fatime<'js>(self: Arc<Self>, cx: Ctx<'js>, args: Rest<Value<'js>>) -> Result<Value<'js>> {
-        let args_pat: &[Value<'_>]= &args.0;
-        let [
-            ts,
-            ..
-        ] =  args_pat else {
+        let args_pat: &[Value<'_>] = &args.0;
+        let [ts, ..] = args_pat else {
             bail!(
                 "fatime expects 1 parameters: the ts, Got: {} parameters.",
                 args.len()
             );
         };
         let ts: i64 = jsvalue2int64!(ts);
-         let rs = unsafe {
-            preview_1::fd_filestat_set_times(
-                self.0,
-                ts,
-                0,
-                Fstflags::Atm as u16
-            )
-        };
+        let rs = unsafe { preview_1::fd_filestat_set_times(self.0, ts, 0, Fstflags::Atm as u16) };
         process_error(cx.clone(), rs)?;
         Ok(Value::new_int(cx, rs))
     }
@@ -492,25 +445,15 @@ impl Descriptor {
     /// The first parameter is the timestamp to set the modification time to.
     /// The timestamp is a BigInt representing the number of milliseconds since the epoch.
     fn fmtime<'js>(self: Arc<Self>, cx: Ctx<'js>, args: Rest<Value<'js>>) -> Result<Value<'js>> {
-        let args_pat: &[Value<'_>]= &args.0;
-        let [
-            ts,
-            ..
-        ] =  args_pat else {
+        let args_pat: &[Value<'_>] = &args.0;
+        let [ts, ..] = args_pat else {
             bail!(
                 "fmtime expects 1 parameters: the ts, Got: {} parameters.",
                 args.len()
             );
         };
         let ts: i64 = jsvalue2int64!(ts);
-         let rs = unsafe {
-            preview_1::fd_filestat_set_times(
-                self.0,
-                0,
-                ts,
-                Fstflags::Mtim as u16
-            )
-        };
+        let rs = unsafe { preview_1::fd_filestat_set_times(self.0, 0, ts, Fstflags::Mtim as u16) };
         process_error(cx.clone(), rs)?;
         Ok(Value::new_int(cx, rs))
     }
@@ -519,23 +462,15 @@ impl Descriptor {
     /// This method is used to truncate the file descriptor to the given length.
     /// The first parameter is the length to truncate the file to.
     fn ftruncate<'js>(self: Arc<Self>, cx: Ctx<'js>, args: Rest<Value<'js>>) -> Result<Value<'js>> {
-        let args_pat: &[Value<'_>]= &args.0;
-        let [
-            len,
-            ..
-        ] =  args_pat else {
+        let args_pat: &[Value<'_>] = &args.0;
+        let [len, ..] = args_pat else {
             bail!(
                 "ftruncate expects 1 parameters: the offset and whence, Got: {} parameters.",
                 args.len()
             );
         };
         let len = jsvalue2int64!(len);
-        let rs = unsafe {
-            preview_1::fd_filestat_set_size(
-                self.0,
-                len
-            )
-        };
+        let rs = unsafe { preview_1::fd_filestat_set_size(self.0, len) };
         process_error(cx.clone(), rs)?;
         Ok(Value::new_int(cx, rs))
     }
@@ -546,12 +481,7 @@ impl Descriptor {
     fn tell<'js>(self: Arc<Self>, cx: Ctx<'js>, _: Rest<Value<'js>>) -> Result<Value<'js>> {
         let mut pos: u64 = 0;
         let pos_ptr: i32 = &mut pos as *mut u64 as i32;
-        let rs = unsafe {
-            preview_1::fd_tell(
-                self.0,
-                pos_ptr
-            )
-        };
+        let rs = unsafe { preview_1::fd_tell(self.0, pos_ptr) };
         process_error(cx.clone(), rs)?;
         Ok(Value::from_big_int(BigInt::from_u64(cx, pos)?))
     }
@@ -564,7 +494,7 @@ impl Descriptor {
                 self.0,
                 0,
                 0,
-                Fstflags::AtmNow as u16|Fstflags::MtimNow as u16
+                Fstflags::AtmNow as u16 | Fstflags::MtimNow as u16,
             )
         };
         process_error(cx.clone(), rs)?;
@@ -574,26 +504,18 @@ impl Descriptor {
     /// The fd_fdstat_set_flags method
     /// This method is used to set the flags of the file descriptor.
     fn set_flags<'js>(self: Arc<Self>, cx: Ctx<'js>, args: Rest<Value<'js>>) -> Result<Value<'js>> {
-        let args_pat: &[Value<'_>]= &args.0;
-        let [
-            flags,
-            ..
-        ] =  args_pat else {
+        let args_pat: &[Value<'_>] = &args.0;
+        let [flags, ..] = args_pat else {
             bail!(
                 "set_flags expects 1 parameters: the fd_flags, Got: {} parameters.",
                 args.len()
             );
         };
-        let fd_flags = flags.as_int().ok_or_else(|| anyhow!("fd_flags must be a int"))?;
-        let rs = unsafe {
-            preview_1::fd_fdstat_set_flags(
-                self.0,
-                fd_flags as u16
-            )
-        };
+        let fd_flags = flags
+            .as_int()
+            .ok_or_else(|| anyhow!("fd_flags must be a int"))?;
+        let rs = unsafe { preview_1::fd_fdstat_set_flags(self.0, fd_flags as u16) };
         process_error(cx.clone(), rs)?;
         Ok(Value::new_int(cx, rs))
     }
-
 }
-
