@@ -1,14 +1,15 @@
 use std::{sync::Arc, vec};
 use javy_plugin_api::javy::{
     quickjs::{
-        prelude::{MutFn, Rest}, BigInt, Ctx, 
-        Function, Object as JObject, TypedArray, Value,
-        String as JString
+        prelude::{MutFn, Rest}, Array, BigInt, Ctx, FromIteratorJs, 
+        Function, Object as JObject, String as JString, TypedArray, Value
     }, to_js_error
 };
 use anyhow::{anyhow, bail, Ok, Result};
 
-use super::{preview_1, process_error, stat::filestate_to_jsobject, Filestat, Fstflags};
+use super::{
+    preview_1, process_error, stat::filestate_to_jsobject, Filestat, Fstflags
+};
 
 
 pub struct Descriptor(i32);
@@ -77,7 +78,60 @@ impl Descriptor {
         bind_method!(fatime);
         // Set the fmtime method
         bind_method!(fmtime);
+        // Set the readdir method
+        bind_method!("readdir", read_dir);
         Ok(Value::from_object(desc))
+    }
+
+    /// todo: implement the readdir method
+    /// This method reads the directory entries from the file descriptor.
+    /// It returns an array of strings representing the names of the entries in the directory.    
+    fn read_dir<'js>(self: Arc<Self>, cx: Ctx<'js>, _args: Rest<Value<'js>>) -> Result<Value<'js>> {
+        let mut dir_buff = vec![];
+        let mut r_buff = vec![0u8; 1024 * 4]; // Buffer to read directory entries into
+        let mut readn: i64 = 0;
+        let mut rs;
+        loop {
+            rs = unsafe {
+                preview_1::fd_readdir(
+                    self.0,
+                    r_buff.as_mut_ptr() as i32,
+                    r_buff.len() as i32,
+                    0,
+                    &mut readn as *mut i64 as i32,
+                )
+            };
+            if rs != 0 {
+                process_error(cx.clone(), rs)?;
+                return Ok(Value::new_null(cx.clone()));
+            }
+            
+            if readn > 0 {
+                dir_buff.extend_from_slice(&r_buff[0..readn as usize]);
+            } 
+            if readn < r_buff.len() as i64 {
+                break; // No more entries to read
+            }
+        }
+        let mut off = 0;
+        let mut name_jsarray = vec![];
+        while off < dir_buff.len() {
+            off += 16;
+            let len: i32 = unsafe {
+                *(dir_buff.as_ptr().wrapping_add(off) as *const i32)
+            };
+            off += 8; // Move past the length field
+            if off + len as usize > dir_buff.len() {
+                return Ok(Value::new_null(cx.clone()));
+            }
+            let name_str = unsafe {
+                std::str::from_utf8_unchecked(&dir_buff[off..off + len as usize])
+            };
+            off += len as usize; // Move past the name
+            name_jsarray.push(Value::from_string(JString::from_str(cx.clone(), name_str)?));
+        }
+        let name_jsarray = Array::from_iter_js(&cx, name_jsarray.iter())?;
+        return Ok(Value::from_array(name_jsarray));
     }
 
     /// The read method

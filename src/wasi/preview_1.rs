@@ -172,5 +172,16 @@ unsafe extern "C" {
         fd: i32,
         fd_flags: u16,
     ) -> i32;
+
+    /// Reads directory entries from a file descriptor
+    #[allow(dead_code)]
+    #[link_name = "fd_readdir"]
+    pub unsafe fn fd_readdir(
+        fd: i32,
+        buf: i32,
+        buf_len: i32,
+        cookie: u64,
+        readn_ptr: i32,
+    ) -> i32;
     
 }
