@@ -1,7 +1,9 @@
-use std::sync::Arc;
+use std::{sync::Arc, vec};
 use javy_plugin_api::javy::{
     quickjs::{
-        prelude::{MutFn, Rest}, BigInt, Ctx, Function, Object as JObject, TypedArray, Value
+        prelude::{MutFn, Rest}, BigInt, Ctx, 
+        Function, Object as JObject, TypedArray, Value,
+        String as JString
     }, to_js_error
 };
 use anyhow::{anyhow, bail, Ok, Result};
@@ -67,6 +69,10 @@ impl Descriptor {
         bind_method!(touch);
         // Set the set_flags method
         bind_method!("setFlags", set_flags);
+        // Set the set_all method
+        bind_method!("readAll", read_all);
+        // Set the set_string method
+        bind_method!("readString", read_string);
         Ok(Value::from_object(desc))
     }
 
@@ -178,6 +184,50 @@ impl Descriptor {
             writen = -rs;
         }
         Ok(Value::new_int(cx, writen))
+    }
+
+    fn read_all_data<'js>(cx: Ctx<'js>, fd: i32) -> Result<Vec<u8>> {
+        let mut data = Vec::new();
+        let mut readn: i32 = 0;
+        let mut rs;
+        let mut buf = vec![0u8; 1024 * 4]; // Buffer to read data into
+        loop {
+            let mut ioslice = vec![Iovec {
+                buf: buf.as_mut_ptr() as *const u8 as i32, // This will be set to the actual buffer later
+                buf_len: 1024*4, // Read in chunks of 1024*4 bytes
+            }];
+            rs = unsafe {
+                preview_1::fd_read(
+                    fd,
+                    ioslice.as_mut_ptr() as i32,
+                    ioslice.len() as i32,
+                    &mut readn as *mut i32 as i32,
+                )
+            };
+            if rs != 0 || readn <= 0 {
+                break; // Stop reading on error or no more data
+            }
+            // Extend the data with the newly read bytes
+            data.extend_from_slice(&buf[0..readn as usize]);
+        }
+        process_error(cx.clone(), rs)?;
+        Ok(data)
+    }
+
+    /// The read_all method
+    /// This method reads all data from the file descriptor and returns it as a Uint8Array.
+    fn read_all<'js>(self: Arc<Self>, cx: Ctx<'js>, _args: Rest<Value<'js>>) -> Result<Value<'js>> {
+        let data = Self::read_all_data(cx.clone(), self.0)?;
+        let arr: TypedArray<'js, u8> = TypedArray::new(cx.clone(), data)?;
+        Ok(Value::from_object(arr.into_object()))
+    }
+
+    /// The read_string method
+    /// This method reads all data from the file descriptor and returns it as a string.
+    fn read_string<'js>(self: Arc<Self>, cx: Ctx<'js>, _args: Rest<Value<'js>>) -> Result<Value<'js>> {
+        let data = Self::read_all_data(cx.clone(), self.0)?;
+        let string: JString<'js> = JString::from_str(cx.clone(), &String::from_utf8(data)?)?;
+        Ok(Value::from_string(string))
     }
 
     /// The advise method
