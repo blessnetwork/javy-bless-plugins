@@ -73,6 +73,10 @@ impl Descriptor {
         bind_method!("readAll", read_all);
         // Set the set_string method
         bind_method!("readString", read_string);
+        // Set the fatime method
+        bind_method!(fatime);
+        // Set the fmtime method
+        bind_method!(fmtime);
         Ok(Value::from_object(desc))
     }
 
@@ -395,6 +399,62 @@ impl Descriptor {
                 self.0,
                 offset,
                 len
+            )
+        };
+        process_error(cx.clone(), rs)?;
+        Ok(Value::new_int(cx, rs))
+    }
+
+    /// The fatime method
+    /// This method is used to set the access time of the file descriptor.
+    /// The first parameter is the timestamp to set the access time to.
+    /// The timestamp is a BigInt representing the number of milliseconds since the epoch.
+    fn fatime<'js>(self: Arc<Self>, cx: Ctx<'js>, args: Rest<Value<'js>>) -> Result<Value<'js>> {
+        let args_pat: &[Value<'_>]= &args.0;
+        let [
+            ts,
+            ..
+        ] =  args_pat else {
+            bail!(
+                "fatime expects 1 parameters: the ts, Got: {} parameters.",
+                args.len()
+            );
+        };
+        let ts: i64 = jsvalue2int64!(ts);
+         let rs = unsafe {
+            preview_1::fd_filestat_set_times(
+                self.0,
+                ts,
+                0,
+                Fstflags::Atm as u16
+            )
+        };
+        process_error(cx.clone(), rs)?;
+        Ok(Value::new_int(cx, rs))
+    }
+
+    /// The fmtime method
+    /// This method is used to set the modification time of the file descriptor.
+    /// The first parameter is the timestamp to set the modification time to.
+    /// The timestamp is a BigInt representing the number of milliseconds since the epoch.
+    fn fmtime<'js>(self: Arc<Self>, cx: Ctx<'js>, args: Rest<Value<'js>>) -> Result<Value<'js>> {
+        let args_pat: &[Value<'_>]= &args.0;
+        let [
+            ts,
+            ..
+        ] =  args_pat else {
+            bail!(
+                "fmtime expects 1 parameters: the ts, Got: {} parameters.",
+                args.len()
+            );
+        };
+        let ts: i64 = jsvalue2int64!(ts);
+         let rs = unsafe {
+            preview_1::fd_filestat_set_times(
+                self.0,
+                0,
+                ts,
+                Fstflags::Mtim as u16
             )
         };
         process_error(cx.clone(), rs)?;
