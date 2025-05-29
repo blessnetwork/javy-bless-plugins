@@ -41,7 +41,7 @@ unsafe extern "C" {
     pub unsafe fn fd_datasync(fd: i32) -> i32;
 
     #[link_name = "fd_prestat_get"]
-    pub unsafe fn fd_prestat_get(fd: i32, path_len: i32) -> i32;
+    pub unsafe fn fd_prestat_get(fd: i32, path_len_ptr: i32) -> i32;
 
     #[link_name = "fd_read"]
     pub unsafe fn fd_read(fd: i32, iovec_slice: i32, iovec_len: i32, readn_ptr: i32) -> i32;
