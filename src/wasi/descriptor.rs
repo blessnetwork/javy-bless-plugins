@@ -148,7 +148,7 @@ impl Descriptor {
         let buffer = &args.0[0];
         let null = Value::new_null(cx.clone());
         let mut size = &null;
-        if args.0.len() > 2 {
+        if args.0.len() > 1 {
             size = &args.0[1];
         }
 
@@ -205,7 +205,7 @@ impl Descriptor {
         let buffer = &args.0[0];
         let null = Value::new_null(cx.clone());
         let mut size = &null;
-        if args.0.len() > 2 {
+        if args.0.len() > 1 {
             size = &args.0[1];
         }
 
