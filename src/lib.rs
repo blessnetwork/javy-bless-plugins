@@ -14,7 +14,7 @@ pub mod crypto;
 pub mod fetch;
 #[cfg(feature = "llm")]
 pub mod llm;
-#[cfg(feature = "wasi")]
+#[cfg(feature = "wasip1")]
 pub mod wasi;
 
 #[cfg(feature = "crypto")]
@@ -64,7 +64,7 @@ pub extern "C" fn initialize_runtime() {
                     )?,
                 )?;
 
-                #[cfg(feature = "wasi")]
+                #[cfg(feature = "wasip1")]
                 {
                     macro_rules! bind {
                         (function, $l: ident) => {
@@ -120,7 +120,7 @@ pub extern "C" fn initialize_runtime() {
                 ctx.eval::<(), _>(include_str!("crypto/crypto.js"))?;
                 #[cfg(feature = "fetch")]
                 ctx.eval::<(), _>(include_str!("fetch/fetch.js"))?;
-                #[cfg(feature = "wasi")]
+                #[cfg(feature = "wasip1")]
                 ctx.eval::<(), _>(include_str!("wasi/preview_1.js"))?;
                 Ok::<_, anyhow::Error>(())
             })
