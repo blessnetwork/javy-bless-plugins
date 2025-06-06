@@ -15,7 +15,7 @@ pub fn wasi_preview1_path_link(args: Args<'_>) -> Result<Value<'_>> {
     let args_pat: &[Value<'_>] = &args.0;
     let [old_dirfd, fd_lookup_flags, old_path, new_dirfd, new_path, ..] = args_pat else {
         bail!(
-            "path_remove_directory expects 5 parameters: the dirfd and path, Got: {} parameters.",
+            "path_link expects 5 parameters: old_dirfd, fd_lookup_flags, old_path, new_dirfd, new_path. Got: {} parameters.",
             args.len()
         );
     };
