@@ -13,7 +13,7 @@ pub fn wasi_preview1_path_rename(args: Args<'_>) -> Result<Value<'_>> {
     let args_pat: &[Value<'_>] = &args.0;
     let [old_dirfd, old_path, new_dirfd, new_path, ..] = args_pat else {
         bail!(
-            "path_remove_directory expects 4 parameters: the dirfd and path, Got: {} parameters.",
+            "path_rename expects 4 parameters: old_dirfd, old_path, new_dirfd, new_path. Got: {} parameters.",
             args.len()
         );
     };
