@@ -21,9 +21,9 @@ pub fn wasi_preview1_path_filestat_get(args: Args<'_>) -> Result<Value<'_>> {
             args.len()
         );
     }
-    let dirfd        = &args_pat[0];
+    let dirfd = &args_pat[0];
     let lookup_flags = &args_pat[1];
-    let path         = &args_pat[2];
+    let path = &args_pat[2];
     let path_ptr = path.as_ptr() as i32;
     let path_len = path.len() as i32;
     let mut fd_stat: Filestat = Default::default();
