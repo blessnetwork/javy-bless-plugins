@@ -14,11 +14,14 @@ pub mod crypto;
 pub mod fetch;
 #[cfg(feature = "llm")]
 pub mod llm;
+#[cfg(feature = "wasip1")]
+pub mod wasi;
 
 #[cfg(feature = "crypto")]
 use crypto::bless_get_random_values;
 #[cfg(feature = "fetch")]
 use fetch::bless_fetch_request;
+
 #[cfg(feature = "llm")]
 use llm::bless_llm_plugin;
 
@@ -61,6 +64,36 @@ pub extern "C" fn initialize_runtime() {
                     )?,
                 )?;
 
+                #[cfg(feature = "wasip1")]
+                {
+                    macro_rules! bind {
+                        (function, $l: ident) => {
+                            let name = concat!("__javy_", stringify!($l));
+                            ctx.globals().set(
+                                name,
+                                Function::new(
+                                    ctx.clone(),
+                                    MutFn::new(move |cx, args| {
+                                        let (cx, args) = hold_and_release!(cx, args);
+                                        wasi::$l(hold!(cx.clone(), args))
+                                            .map_err(|e| to_js_error(cx, e))
+                                    }),
+                                )?,
+                            )?;
+                        };
+                    }
+                    bind!(function, wasi_preview1_open);
+                    bind!(function, wasi_preview1_fd_prestat_dir_name);
+                    bind!(function, wasi_preview1_path_create_directory);
+                    bind!(function, wasi_preview1_path_remove_directory);
+                    bind!(function, wasi_preview1_path_unlink_file);
+                    bind!(function, wasi_preview1_close);
+                    bind!(function, wasi_preview1_path_symlink);
+                    bind!(function, wasi_preview1_path_link);
+                    bind!(function, wasi_preview1_path_rename);
+                    bind!(function, wasi_preview1_path_filestat_get);
+                }
+
                 #[cfg(feature = "llm")]
                 ctx.globals().set(
                     "BlessLLM",
@@ -87,6 +120,8 @@ pub extern "C" fn initialize_runtime() {
                 ctx.eval::<(), _>(include_str!("crypto/crypto.js"))?;
                 #[cfg(feature = "fetch")]
                 ctx.eval::<(), _>(include_str!("fetch/fetch.js"))?;
+                #[cfg(feature = "wasip1")]
+                ctx.eval::<(), _>(include_str!("wasi/preview_1.js"))?;
                 Ok::<_, anyhow::Error>(())
             })
             .unwrap();
