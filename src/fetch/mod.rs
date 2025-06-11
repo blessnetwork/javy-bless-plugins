@@ -5,16 +5,25 @@ use blockless::BlocklessHttp;
 use javy_plugin_api::javy::quickjs::{Object as JSObject, String as JSString, Value};
 use javy_plugin_api::javy::Args;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct FetchOptions {
     method: String,
+    headers: Option<HashMap<String, String>>,
+    body: Option<String>,
 }
 
 impl FetchOptions {
-    pub fn new(method: &str) -> Self {
+    pub fn new(
+        method: &str,
+        headers: Option<HashMap<String, String>>,
+        body: Option<String>,
+    ) -> Self {
         FetchOptions {
             method: method.into(),
+            headers,
+            body,
         }
     }
 

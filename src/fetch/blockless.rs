@@ -1,6 +1,7 @@
 use crate::fetch::FetchOptions;
-use serde_json::{json, Value};
+use serde_json::{json, Value as SerdeValue};
 use std::cmp::Ordering;
+use std::collections::HashMap;
 
 pub type Handle = u32;
 
@@ -16,40 +17,70 @@ pub struct HttpOptions {
     method: String,
     connect_timeout: u32,
     read_timeout: u32,
+    headers: Option<HashMap<String, String>>,
     body: Option<String>,
 }
 
 impl HttpOptions {
-    pub fn new(method: &str, connect_timeout: u32, read_timeout: u32) -> Self {
+    pub fn new(
+        method: &str,
+        connect_timeout: u32,
+        read_timeout: u32,
+        headers: Option<HashMap<String, String>>,
+        body: Option<String>,
+    ) -> Self {
         HttpOptions {
             method: method.into(),
             connect_timeout,
             read_timeout,
-            body: None,
+            headers,
+            body,
         }
     }
 
-    pub fn to_json(&self) -> Value {
-        json!({
-            "method": self.method,
-            "connectTimeout": self.connect_timeout,
-            "readTimeout": self.read_timeout,
-            "headers": "{}",
-            "body": self.body,
-        })
+    pub fn to_json(&self) -> SerdeValue {
+        let mut obj = serde_json::Map::new();
+        obj.insert("method".to_string(), SerdeValue::String(self.method.clone()));
+        obj.insert("connectTimeout".to_string(), json!(self.connect_timeout));
+        obj.insert("readTimeout".to_string(), json!(self.read_timeout));
+        
+        match &self.headers {
+            Some(h) if !h.is_empty() => {
+                let headers_str = serde_json::to_string(h).unwrap_or_else(|_| "{}".to_string());
+                obj.insert("headers".to_string(), SerdeValue::String(headers_str));
+            }
+            _ => {
+                obj.insert("headers".to_string(), SerdeValue::String("{}".to_string())); 
+            }
+        }
+
+        obj.insert(
+            "body".to_string(),
+            self.body.as_ref().map_or(SerdeValue::Null, |b| {
+                SerdeValue::String(b.clone())
+            }),
+        );
+        SerdeValue::Object(obj)
     }
 }
 
 #[allow(dead_code)]
 impl BlocklessHttp {
     pub fn open(url: &str, opts: &FetchOptions) -> Result<Self, HttpErrorKind> {
-        let http_opts = HttpOptions::new(&opts.method, 30, 10);
-        let http_opts_str = serde_json::to_string(&http_opts.to_json()).unwrap();
+        let http_opts = HttpOptions::new(
+            &opts.method,
+            30,
+            10,
+            opts.headers.clone(),
+            opts.body.clone(),
+        );
+        let http_opts_value = http_opts.to_json();
+        let http_opts_str = serde_json::to_string(&http_opts_value).unwrap();
 
         let mut fd = 0;
         let mut status = 0;
         let rs = unsafe {
-            http_open(
+            http_req(
                 url.as_ptr(),
                 url.len() as _,
                 http_opts_str.as_ptr(),
@@ -207,7 +238,7 @@ impl From<u32> for HttpErrorKind {
 #[link(wasm_import_module = "blockless_http")]
 extern "C" {
     #[link_name = "http_req"]
-    pub(crate) fn http_open(
+    pub(crate) fn http_req(
         url: *const u8,
         url_len: u32,
         opts: *const u8,
