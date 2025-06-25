@@ -109,7 +109,7 @@ pub fn bless_crawl(args: Args<'_>) -> Result<Value<'_>> {
                         let opts_obj = args[1]
                             .as_object()
                             .ok_or_else(|| anyhow!("options must be an object"))?;
-                        (parse_options(&opts_obj), parse_map_options(&opts_obj))
+                        (parse_options(opts_obj), parse_map_options(opts_obj))
                     } else if let Some(config) = scrape_config_clone.as_ref() {
                         (config.clone(), MapOptions::default())
                     } else {
@@ -165,7 +165,7 @@ pub fn bless_crawl(args: Args<'_>) -> Result<Value<'_>> {
                         let opts_obj = args[1]
                             .as_object()
                             .ok_or_else(|| anyhow!("options must be an object"))?;
-                        (parse_options(&opts_obj), parse_crawl_options(&opts_obj))
+                        (parse_options(opts_obj), parse_crawl_options(opts_obj))
                     } else if let Some(config) = scrape_config_clone.as_ref() {
                         (config.clone(), CrawlOptions::default())
                     } else {
