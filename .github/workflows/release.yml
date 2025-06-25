@@ -17,6 +17,8 @@ jobs:
           { name: 'llm', features: '--no-default-features --features llm' },
           { name: 'fetch', features: '--no-default-features --features fetch' },
           { name: 'crypto', features: '--no-default-features --features crypto' },
+          { name: 'crawl', features: '--no-default-features --features crawl' },
+          { name: 'wasip1', features: '--no-default-features --features wasip1' },
           { name: 'full', features: '--all-features' }
         ]
 
