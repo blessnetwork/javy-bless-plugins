@@ -63,7 +63,7 @@ pub fn bless_crawl(args: Args<'_>) -> Result<Value<'_>> {
                     };
 
                     let result = BlessCrawl::with_config(scrape_options)
-                        .unwrap()
+                        .map_err(|e| anyhow!("Failed to create BlessCrawl instance: {:?}", e))?
                         .scrape(&url, None)
                         .map_err(|e| anyhow!("Scrape failed: {:?}", e))?;
 
@@ -119,7 +119,7 @@ pub fn bless_crawl(args: Args<'_>) -> Result<Value<'_>> {
                     };
 
                     let result = BlessCrawl::with_config(scrape_options)
-                        .unwrap()
+                        .map_err(|e| anyhow!("Failed to create BlessCrawl instance: {:?}", e))?
                         .map(&url, Some(map_options))
                         .map_err(|e| anyhow!("Map failed: {:?}", e))?;
 
@@ -175,7 +175,7 @@ pub fn bless_crawl(args: Args<'_>) -> Result<Value<'_>> {
                     };
 
                     let result = BlessCrawl::with_config(scrape_options)
-                        .unwrap()
+                        .map_err(|e| anyhow!("Failed to create BlessCrawl instance: {:?}", e))?
                         .crawl(&url, Some(crawl_options))
                         .map_err(|e| anyhow!("Crawl failed: {:?}", e))?;
 
