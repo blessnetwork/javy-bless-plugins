@@ -8,6 +8,8 @@ use javy_plugin_api::{
     Config,
 };
 
+#[cfg(feature = "crawl")]
+pub mod crawl;
 #[cfg(feature = "crypto")]
 pub mod crypto;
 #[cfg(feature = "fetch")]
@@ -19,6 +21,10 @@ pub mod wasi;
 
 #[cfg(feature = "crypto")]
 use crypto::bless_get_random_values;
+
+#[cfg(feature = "crawl")]
+use crawl::bless_crawl;
+
 #[cfg(feature = "fetch")]
 use fetch::bless_fetch_request;
 
@@ -94,6 +100,18 @@ pub extern "C" fn initialize_runtime() {
                     bind!(function, wasi_preview1_path_filestat_get);
                 }
 
+                #[cfg(feature = "crawl")]
+                ctx.globals().set(
+                    "BlessCrawl",
+                    Function::new(
+                        ctx.clone(),
+                        MutFn::new(move |cx, args| {
+                            let (cx, args) = hold_and_release!(cx, args);
+                            bless_crawl(hold!(cx.clone(), args)).map_err(|e| to_js_error(cx, e))
+                        }),
+                    )?,
+                )?;
+
                 #[cfg(feature = "llm")]
                 ctx.globals().set(
                     "BlessLLM",
@@ -118,6 +136,8 @@ pub extern "C" fn initialize_runtime() {
 
                 #[cfg(feature = "crypto")]
                 ctx.eval::<(), _>(include_str!("crypto/crypto.js"))?;
+                #[cfg(feature = "crawl")]
+                ctx.eval::<(), _>(include_str!("crawl/crawl.js"))?;
                 #[cfg(feature = "fetch")]
                 ctx.eval::<(), _>(include_str!("fetch/fetch.js"))?;
                 #[cfg(feature = "wasip1")]
