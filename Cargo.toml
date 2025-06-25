@@ -30,5 +30,9 @@ opt-level = 3
 crypto = []
 fetch = []
 llm = []
+crawl = []
 wasip1 = []
-default = ["crypto", "fetch", "wasip1"]
+default = ["crypto", "fetch", "crawl", "wasip1"]
+
+[patch.crates-io]
+blockless-sdk = { git = "https://github.com/blocklessnetwork/sdk-rust", rev = "1e9295fb" }
