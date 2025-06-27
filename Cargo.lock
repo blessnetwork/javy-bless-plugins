@@ -78,8 +78,9 @@ checksum = "8f68f53c83ab957f72c32642f3868eec03eb974d1fb82e453128456482613d36"
 
 [[package]]
 name = "blockless-sdk"
-version = "0.1.10"
-source = "git+https://github.com/blocklessnetwork/sdk-rust?rev=1e9295fb#1e9295fb36baf8a4b151cdf507831fd1756dde86"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "38f0d963f7f2a727ba556c12b30e0acd0bd4cfbd88c5e36efc5d613e4de40fae"
 dependencies = [
  "htmd",
  "json",
