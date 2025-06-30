@@ -1,6 +1,6 @@
 [package]
 name = "javy-bless-plugins"
-version = "0.2.4"
+version = "0.2.5"
 authors = ["zees-dev"]
 description = "javy bless plugins"
 keywords = ["javy", "bless", "plugins"]
