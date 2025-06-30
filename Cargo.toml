@@ -15,7 +15,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 anyhow = "1.0.95"
-blockless-sdk = { version = "0.1.10" }
+blockless-sdk = { version = "0.2.0" }
 javy-plugin-api = { version = "3.0.0", features = ["json"] }
 rand = "0.8.5"
 serde_json = "1.0.120"
@@ -30,5 +30,6 @@ opt-level = 3
 crypto = []
 fetch = []
 llm = []
+crawl = []
 wasip1 = []
-default = ["crypto", "fetch", "wasip1"]
+default = ["crypto", "fetch", "crawl", "wasip1"]

@@ -8,6 +8,7 @@ These are the plugins for the [Javy](https://github.com/blessnetwork/bls-javy) r
 |--------|-------------|--------------------------|--------------------------|
 | `BlessLLM` | A plugin for interacting with LLMs | ✅ | ✅ |
 | `BlessFetch` | A plugin for interacting with HTTP / fetch | ✅ | ✅ |
+| `BlessCrawl` | A plugin for distributed web scraping | ✅ | ❌ |
 | `BlessCrypto` | A plugin for interacting with the crypto library | ✅ | ✅ |
 
 ## Architecture
@@ -16,6 +17,7 @@ These are the plugins for the [Javy](https://github.com/blessnetwork/bls-javy) r
 flowchart TD
     subgraph "Rust Source Code"
         BC["BlessCrypto"]:::source
+        BCR["BlessCrawl"]:::source
         BF["BlessFetch"]:::source
         BL["BlessLLM"]:::source
     end
@@ -41,6 +43,7 @@ flowchart TD
 
     %% Connections: Rust Modules to Build Pipeline
     BC -->|"compile"| CBP
+    BCR -->|"compile"| CBP
     BF -->|"compile"| CBP
     BL -->|"compile"| CBP
 
@@ -61,6 +64,7 @@ flowchart TD
 
     %% Click Events
     click BC "https://github.com/blessnetwork/javy-bless-plugins/tree/main/src/crypto"
+    click BCR "https://github.com/blessnetwork/javy-bless-plugins/tree/main/src/crawl"
     click BF "https://github.com/blessnetwork/javy-bless-plugins/tree/main/src/fetch"
     click BL "https://github.com/blessnetwork/javy-bless-plugins/tree/main/src/llm"
     click EJS "https://github.com/blessnetwork/javy-bless-plugins/blob/main/examples/llm.js"
@@ -92,5 +96,5 @@ cargo build --target=wasm32-wasip1 --release --all-features
 javy init-plugin ./target/wasm32-wasip1/release/bless_plugins.wasm -o bless_plugins.wasm
 
 # compile javascript to wasm with javy QuickJS runtime and plugin - to be executed in a WASM runtime
-javy build -C plugin=bless_plugins.wasm ./examples/llm.js -o bless-llm.wasm
+javy build -C plugin=bless_plugins.wasm ./examples/crawl.js -o bless-crawl.wasm
 ```
