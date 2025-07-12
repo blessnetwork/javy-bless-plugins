@@ -14,12 +14,15 @@ jobs:
       matrix:
         build: [
           { name: 'standard', features: '' },
-          { name: 'llm', features: '--no-default-features --features llm' },
-          { name: 'fetch', features: '--no-default-features --features fetch' },
-          { name: 'crypto', features: '--no-default-features --features crypto' },
           { name: 'crawl', features: '--no-default-features --features crawl' },
+          { name: 'crypto', features: '--no-default-features --features crypto' },
+          { name: 'fetch', features: '--no-default-features --features fetch' },
+          { name: 'llm', features: '--no-default-features --features llm' },
           { name: 'wasip1', features: '--no-default-features --features wasip1' },
-          { name: 'full', features: '--all-features' }
+          { name: 'full', features: '--all-features' },
+          # NOTE: native does not support `crawl` feature
+          { name: 'native', features: '--no-default-features --features crypto,fetch,llm,wasip1' },
+          { name: 'browser', features: '--all-features' }
         ]
 
     steps:
