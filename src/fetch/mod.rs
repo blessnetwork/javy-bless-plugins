@@ -197,18 +197,80 @@ fn parse_body(value: &Value) -> Result<BodyInit> {
             // Parse FormData entries - simplified for now
             // In a real implementation, we'd properly parse the FormData structure
             Ok(BodyInit::FormData(form_data))
+        } else if let Ok(Some(constructor_name)) = obj.get::<_, Option<String>>("constructor.name")
+        {
+            // Check if it's an ArrayBuffer or typed array
+            if constructor_name == "ArrayBuffer" || constructor_name.ends_with("Array") {
+                return extract_binary_data(obj);
+            } else {
+                // Assume it's JSON - serialize the object manually
+                // In a real implementation, we'd need to properly serialize the JS object
+                Ok(BodyInit::Json("{}".to_string()))
+            }
         } else {
+            // Try to check for ArrayBuffer or Uint8Array by checking for byteLength property
+            if obj.get::<_, Option<f64>>("byteLength").is_ok() {
+                return extract_binary_data(obj);
+            }
             // Assume it's JSON - serialize the object manually
             // In a real implementation, we'd need to properly serialize the JS object
             Ok(BodyInit::Json("{}".to_string()))
         }
     } else if value.is_array() {
-        // Handle arrays (which might represent binary data)
-        // This would need proper implementation to extract bytes
-        Ok(BodyInit::Binary(vec![]))
+        // Handle arrays - check if it's a typed array or regular array
+        if let Some(array_obj) = value.as_object() {
+            extract_binary_data(array_obj)
+        } else {
+            Err(anyhow!("Invalid array body"))
+        }
     } else {
         Err(anyhow!("Unsupported body type"))
     }
+}
+
+/// Extract binary data from ArrayBuffer or typed arrays
+fn extract_binary_data(obj: &Object) -> Result<BodyInit> {
+    let mut bytes = Vec::new();
+
+    // Check if it's an ArrayBuffer
+    if let Ok(Some(byte_length)) = obj.get::<_, Option<f64>>("byteLength") {
+        let length = byte_length as usize;
+
+        // For ArrayBuffer, we need to check if there's a way to access the raw bytes
+        // First, try to see if it's exposed as an array-like object
+        for i in 0..length {
+            if let Ok(Some(byte)) = obj.get::<_, Option<f64>>(&i.to_string()) {
+                bytes.push(byte as u8);
+            } else {
+                // If we can't access bytes directly, try alternative methods
+                break;
+            }
+        }
+        if bytes.len() == length {
+            return Ok(BodyInit::Binary(bytes));
+        }
+    }
+
+    // Check if it's a typed array (Uint8Array, etc.)
+    if let Ok(Some(length)) = obj.get::<_, Option<f64>>("length") {
+        let length = length as usize;
+        // Try to extract bytes from typed array
+        for i in 0..length {
+            if let Ok(Some(byte)) = obj.get::<_, Option<f64>>(&i.to_string()) {
+                bytes.push(byte as u8);
+            } else {
+                return Err(anyhow!("Failed to extract byte at index {}", i));
+            }
+        }
+        return Ok(BodyInit::Binary(bytes));
+    }
+
+    // If we have a buffer property (for typed arrays), try to access it
+    if let Ok(Some(buffer)) = obj.get::<_, Option<Object>>("buffer") {
+        // Recurse to handle the underlying ArrayBuffer
+        return extract_binary_data(&buffer);
+    }
+    Err(anyhow!("Unable to extract binary data from object"))
 }
 
 /// Create JavaScript Response object from Rust response
