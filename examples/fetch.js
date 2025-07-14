@@ -174,6 +174,75 @@ async function main() {
             console.log(`✅ Expected error caught: ${error.message}`);
         }
 
+        // Example 13: Binary data with Uint8Array
+        console.log("\n13. Binary data with Uint8Array:");
+        const binaryData = new Uint8Array([72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100]); // "Hello World"
+        const binaryResponse = await fetch("https://httpbin.org/post", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/octet-stream"
+            },
+            body: binaryData
+        });
+
+        const binaryResult = await binaryResponse.json();
+        console.log(`Binary data sent successfully: ${binaryResponse.status}`);
+        console.log(`Data received by server: ${binaryResult.data}`);
+
+        // Example 14: ArrayBuffer body
+        console.log("\n14. ArrayBuffer body:");
+        const buffer = new ArrayBuffer(16);
+        const view = new Uint8Array(buffer);
+        for (let i = 0; i < view.length; i++) {
+            view[i] = i + 65; // ASCII A, B, C, etc.
+        }
+        
+        const bufferResponse = await fetch("https://httpbin.org/post", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/octet-stream",
+                "X-Binary-Type": "ArrayBuffer"
+            },
+            body: buffer
+        });
+
+        const bufferResult = await bufferResponse.json();
+        console.log(`ArrayBuffer sent successfully: ${bufferResponse.status}`);
+        console.log(`Content-Type header: ${bufferResult.headers['Content-Type']}`);
+        console.log(`Custom header: ${bufferResult.headers['X-Binary-Type']}`);
+
+        // Example 15: Response arrayBuffer() method
+        console.log("\n15. Response arrayBuffer() method:");
+        const imageResponse = await fetch("https://httpbin.org/image/png");
+        console.log(`Image response status: ${imageResponse.status}`);
+        console.log(`Content-Type: ${imageResponse.headers.get('Content-Type')}`);
+        
+        const imageBuffer = await imageResponse.arrayBuffer();
+        console.log(`Image buffer size: ${imageBuffer.byteLength} bytes`);
+        
+        // Convert first few bytes to hex for display
+        const imageView = new Uint8Array(imageBuffer);
+        const hexPreview = Array.from(imageView.slice(0, 16))
+            .map(b => b.toString(16).padStart(2, '0'))
+            .join(' ');
+        console.log(`First 16 bytes (hex): ${hexPreview}`);
+
+        // Example 16: Binary data with regular array (fallback test)
+        console.log("\n16. Binary data with regular array:");
+        const regularArray = [66, 108, 111, 99, 107, 108, 101, 115, 115]; // "Blockless"
+        const arrayResponse = await fetch("https://httpbin.org/post", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/octet-stream",
+                "X-Array-Type": "Regular"
+            },
+            body: regularArray
+        });
+
+        const arrayResult = await arrayResponse.json();
+        console.log(`Regular array sent: ${arrayResponse.status}`);
+        console.log(`Data type header: ${arrayResult.headers['X-Array-Type']}`);
+
         console.log("\n✅ All fetch examples completed successfully!");
         
     } catch (error) {
