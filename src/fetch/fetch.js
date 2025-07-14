@@ -165,8 +165,8 @@
         }
 
         static _fromNative(nativeResponse) {
-            const response = new Response();
-            
+            const response = new Response(nativeResponse.body || null);
+
             // Copy properties from native response
             response._status = nativeResponse.status;
             response._statusText = nativeResponse.statusText;
@@ -174,17 +174,17 @@
             response._url = nativeResponse.url;
             response._redirected = nativeResponse.redirected;
             response._type = nativeResponse.type;
-            
+
             // Convert headers object to Headers instance
             response._headers = new Headers(nativeResponse.headers);
-            
+
             // Bind native methods
             response._nativeText = nativeResponse.text;
             response._nativeJson = nativeResponse.json;
             response._nativeArrayBuffer = nativeResponse.arrayBuffer;
             response._nativeBlob = nativeResponse.blob;
             response._nativeClone = nativeResponse.clone;
-            
+
             return response;
         }
 
@@ -206,7 +206,6 @@
             if (this._nativeText) {
                 return this._nativeText();
             }
-            
             return String(this._body || '');
         }
 
@@ -215,11 +214,9 @@
                 throw new TypeError('Body already consumed');
             }
             this._bodyUsed = true;
-            
             if (this._nativeJson) {
                 return this._nativeJson();
             }
-            
             const text = await this.text();
             return JSON.parse(text);
         }
@@ -245,11 +242,11 @@
                 throw new TypeError('Body already consumed');
             }
             this._bodyUsed = true;
-            
+
             if (this._nativeBlob) {
                 return this._nativeBlob();
             }
-            
+
             // Return blob-like object
             const arrayBuffer = await this.arrayBuffer();
             return {
@@ -264,12 +261,12 @@
             if (this._bodyUsed) {
                 throw new TypeError('Cannot clone a response with used body');
             }
-            
+
             // If this response came from native code (has native methods), call native clone
             if (this._nativeClone) {
                 return Response._fromNative(this._nativeClone());
             }
-            
+
             // Otherwise create a JavaScript clone
             const clonedResponse = new Response(this._body, {
                 status: this._status,
@@ -285,7 +282,7 @@
             if (this._nativeJson) clonedResponse._nativeJson = this._nativeJson;
             if (this._nativeArrayBuffer) clonedResponse._nativeArrayBuffer = this._nativeArrayBuffer;
             if (this._nativeBlob) clonedResponse._nativeBlob = this._nativeBlob;
-            
+
             return clonedResponse;
         }
 
