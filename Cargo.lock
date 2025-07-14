@@ -85,7 +85,7 @@ checksum = "8f68f53c83ab957f72c32642f3868eec03eb974d1fb82e453128456482613d36"
 [[package]]
 name = "blockless-sdk"
 version = "0.2.1"
-source = "git+https://github.com/blocklessnetwork/sdk-rust.git?rev=368b6b81#368b6b8179033b1b7daeed78f42ae84373bf694e"
+source = "git+https://github.com/blocklessnetwork/sdk-rust.git?rev=f77efbb4#f77efbb4257bcf830eba6576a0ab0943af4f932e"
 dependencies = [
  "base64",
  "htmd",
