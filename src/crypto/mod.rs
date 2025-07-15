@@ -5,6 +5,8 @@ use javy_plugin_api::javy::{
 };
 use rand::RngCore;
 
+pub const CRYPTO_JS: &str = include_str!("crypto.js");
+
 pub fn bless_get_random_values(args: Args<'_>) -> Result<Value<'_>> {
     let (cx, args) = args.release();
     let (data, offset, length) = extract_args(&args, "Javy.Crypto.getRandomValues")?;

@@ -7,6 +7,8 @@ use javy_plugin_api::javy::{
 };
 use std::collections::HashMap;
 
+pub const FETCH_JS: &str = include_str!("fetch.js");
+
 /// A fetch-compliant HTTP client
 pub fn bless_fetch_request(args: Args<'_>) -> Result<Value<'_>> {
     let (cx, args) = args.release();
