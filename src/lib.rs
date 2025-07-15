@@ -18,13 +18,16 @@ pub mod llm;
 pub mod wasi;
 
 #[cfg(feature = "crypto")]
-use crypto::bless_get_random_values;
+use crypto::{bless_get_random_values, CRYPTO_JS};
 
 #[cfg(feature = "fetch")]
-use fetch::bless_fetch_request;
+use fetch::{bless_fetch_request, FETCH_JS};
 
 #[cfg(feature = "llm")]
 use llm::bless_llm_plugin;
+
+#[cfg(feature = "wasip1")]
+use wasi::PREVIEW_1_JS;
 
 import_namespace!("bless_core_plugins");
 
@@ -118,11 +121,11 @@ pub extern "C" fn initialize_runtime() {
                 )?;
 
                 #[cfg(feature = "crypto")]
-                ctx.eval::<(), _>(include_str!("crypto/crypto.js"))?;
+                ctx.eval::<(), _>(CRYPTO_JS)?;
                 #[cfg(feature = "fetch")]
-                ctx.eval::<(), _>(include_str!("fetch/fetch.js"))?;
+                ctx.eval::<(), _>(FETCH_JS)?;
                 #[cfg(feature = "wasip1")]
-                ctx.eval::<(), _>(include_str!("wasi/preview_1.js"))?;
+                ctx.eval::<(), _>(PREVIEW_1_JS)?;
                 Ok::<_, anyhow::Error>(())
             })
             .unwrap();

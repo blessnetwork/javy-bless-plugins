@@ -29,6 +29,8 @@ pub(crate) use stat::wasi_preview1_path_filestat_get;
 pub(crate) use symlink::wasi_preview1_path_symlink;
 pub(crate) use unlink::wasi_preview1_path_unlink_file;
 
+pub const PREVIEW_1_JS: &str = include_str!("preview_1.js");
+
 #[inline]
 pub fn process_error(ctx: Ctx<'_>, rs: i32) -> Result<()> {
     let obj = JObject::new(ctx.clone())?;
