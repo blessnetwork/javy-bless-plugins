@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Result};
-use blockless_sdk::{BlocklessLlm, LlmOptions, Models};
+use blockless_sdk::llm::{BlocklessLlm, LlmOptions, Models};
 use javy_plugin_api::javy::{
     hold, hold_and_release,
     quickjs::{prelude::MutFn, Function, Object, String as JSString, Value},
