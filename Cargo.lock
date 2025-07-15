@@ -42,6 +42,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ace50bade8e6234aa140d9a2f552bbee1db4d353f69b8217bc503490fc1a9f26"
 
 [[package]]
+name = "base64"
+version = "0.13.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9e1b586273c5702936fe7b7d6896644d8be71e6314cfe09d3167c95f712589e8"
+
+[[package]]
 name = "bindgen"
 version = "0.69.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -79,9 +85,9 @@ checksum = "8f68f53c83ab957f72c32642f3868eec03eb974d1fb82e453128456482613d36"
 [[package]]
 name = "blockless-sdk"
 version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a2ac290e9f8a59dd04c89ee23d99cfca596103f83e192fc64ee00d2a50994ea5"
+source = "git+https://github.com/blocklessnetwork/sdk-rust.git?rev=f77efbb4#f77efbb4257bcf830eba6576a0ab0943af4f932e"
 dependencies = [
+ "base64",
  "htmd",
  "json",
  "kuchikiki",
