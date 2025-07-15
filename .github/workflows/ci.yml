@@ -42,3 +42,50 @@ jobs:
           for file in ./examples/*.js; do
             javy build -C plugin=bless_plugins.wasm "$file" -o "${file%.js}.wasm"
           done
+
+  get-features:
+    runs-on: ubuntu-latest
+    outputs:
+      features: ${{ steps.get-features.outputs.features }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+      - name: Install toml-cli
+        run: cargo install toml-cli
+      - name: Extract features from Cargo.toml
+        id: get-features
+        run: |
+          # Extract all feature names from Cargo.toml
+          all_features=$(toml get Cargo.toml features | jq -r 'keys[]')
+
+          # Filter out default
+          features=$(echo "$all_features" | grep -v -E '^(default)$' | jq -R -s -c 'split("\n") | map(select(length > 0))')
+
+          # Add "default" and "all" to test with default features and all features
+          features=$(echo $features | jq -c '. + ["default", "all"]')
+
+          echo "features=$features" >> $GITHUB_OUTPUT
+          echo "Detected features: $features"
+
+  feature-matrix:
+    needs: get-features
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        feature: ${{ fromJson(needs.get-features.outputs.features) }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.85.0
+        with:
+          toolchain: stable
+          targets: wasm32-wasip1
+      - name: Check feature ${{ matrix.feature }}
+        run: |
+          if [ "${{ matrix.feature }}" = "default" ]; then
+            cargo check --release
+          elif [ "${{ matrix.feature }}" = "all" ]; then
+            cargo check --release --all-features
+          else
+            cargo check --release --no-default-features --features ${{ matrix.feature }}
+          fi
