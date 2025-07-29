@@ -11,7 +11,7 @@ repository = "https://github.com/blessnetwork/javy-bless-plugins"
 
 [lib]
 name = "bless_plugins"
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 anyhow = "1.0.95"
