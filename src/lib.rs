@@ -17,17 +17,10 @@ pub mod llm;
 #[cfg(feature = "wasip1")]
 pub mod wasi;
 
-#[cfg(feature = "crypto")]
-use crypto::bless_get_random_values;
-
-#[cfg(feature = "fetch")]
-use fetch::bless_fetch_request;
-
-#[cfg(feature = "llm")]
-use llm::bless_llm_plugin;
-
+#[cfg(feature = "runtime")]
 import_namespace!("bless_core_plugins");
 
+#[cfg(feature = "runtime")]
 #[export_name = "initialize_runtime"]
 pub extern "C" fn initialize_runtime() {
     let mut config = Config::default();
