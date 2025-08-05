@@ -11,7 +11,7 @@ repository = "https://github.com/blessnetwork/javy-bless-plugins"
 
 [lib]
 name = "bless_plugins"
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 anyhow = "1.0.95"
@@ -27,7 +27,8 @@ lto = true
 opt-level = 3
 
 [features]
-default = ["crypto", "fetch", "llm", "wasip1"]
+default = ["runtime", "crypto", "fetch", "llm", "wasip1"]
+runtime = []
 crypto = []
 fetch = ["blockless-sdk/http"]
 llm = ["blockless-sdk/llm"]

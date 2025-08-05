@@ -13,11 +13,10 @@ jobs:
     strategy:
       matrix:
         build: [
-          { name: 'standard', features: '' },
-          { name: 'crypto', features: '--no-default-features --features crypto' },
-          { name: 'fetch', features: '--no-default-features --features fetch' },
-          { name: 'llm', features: '--no-default-features --features llm' },
-          { name: 'wasip1', features: '--no-default-features --features wasip1' },
+          { name: 'crypto', features: '--no-default-features --features runtime,crypto' },
+          { name: 'fetch', features: '--no-default-features --features runtime,fetch' },
+          { name: 'wasip1', features: '--no-default-features --features runtime,wasip1' },
+          { name: 'llm', features: '--no-default-features --features runtime,llm' },
           { name: 'full', features: '--all-features' },
         ]
 
@@ -46,7 +45,7 @@ jobs:
         id: prepare
         run: |
           VERSION=${{ github.event.release.tag_name }}
-          SUFFIX="${{ matrix.build.name != 'standard' && format('-{0}', matrix.build.name) || '' }}"
+          SUFFIX="${{ format('-{0}', matrix.build.name) || '' }}"
           ARTIFACT_NAME="bless-plugins${SUFFIX}-${VERSION}.wasm"
           mv bless_plugins.wasm "$ARTIFACT_NAME"
           echo "artifact_name=$ARTIFACT_NAME" >> "$GITHUB_OUTPUT"
